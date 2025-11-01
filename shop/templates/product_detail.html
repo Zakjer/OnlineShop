@@ -1,0 +1,82 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ product.name }} — OnlineShop{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'shop/css/product.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container product-detail">
+  <div class="row">
+    <div class="col-md-6 product-image text-center">
+      <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded">
+    </div>
+
+    <div class="col-md-6 product-info">
+      <h1 class="fw-bold">{{ product.name }}</h1>
+      <p class="text-muted mb-1">Category: {{ product.category.name }}</p>
+      <p class="text-muted mb-3">Brand: {{ product.brand }}</p>
+
+      {% if product.discount_price %}
+      <div class="price">
+        <span class="text-muted text-decoration-line-through">${{ product.price }}</span>
+        <span class="text-danger fw-bold ms-2">${{ product.discount_price }}</span>
+      </div>
+      {% else %}
+      <div class="price text-success fw-bold">${{ product.price }}</div>
+      {% endif %}
+
+      <p class="short-description">{{ product.short_description }}</p>
+
+      {% if product.stock > 0 %}
+      <p class="text-success">In stock: {{ product.stock }}</p>
+      {% else %}
+      <p class="text-danger">Out of stock</p>
+      {% endif %}
+
+      <div class="add-to-cart d-flex align-items-center mt-3">
+        <label for="quantity" class="me-2 fw-semibold">Qty:</label>
+        <input id="quantity" type="number" value="1" min="1" max="{{ product.stock }}" class="form-control w-auto me-3">
+        <button
+          id="add-to-cart-btn"
+          data-product="{{ product.id }}"
+          class="btn btn-primary fw-semibold"
+          {% if product.stock == 0 %}disabled{% endif %}
+        >
+          Add to Cart
+        </button>
+      </div>
+
+      <details class="mt-4">
+        <summary class="fw-semibold text-dark">More details</summary>
+        <p class="mt-2">{{ product.description|linebreaks }}</p>
+      </details>
+    </div>
+  </div>
+
+  {% if related_products %}
+  <div class="related-products mt-5">
+    <h3 class="mb-4">Related Products</h3>
+    <div class="row g-4">
+      {% for p in related_products %}
+      <div class="col-6 col-md-4 col-lg-3">
+        <div class="card h-100 border-0 shadow-sm">
+          <img src="{{ p.image.url }}" alt="{{ p.name }}" class="card-img-top">
+          <div class="card-body text-center">
+            <h6 class="card-title">{{ p.name }}</h6>
+            <p class="fw-bold text-primary mb-2">${{ p.price }}</p>
+            <a href="{% url 'product_detail' p.id %}" class="btn btn-outline-dark btn-sm">View</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'shop/js/cart.js' %}"></script>
+{% endblock %}

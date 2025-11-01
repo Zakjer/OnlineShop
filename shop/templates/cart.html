@@ -1,0 +1,50 @@
+﻿{% extends 'base.html' %}
+{% load static %}
+{% block title %}Your Cart — OnlineShop{% endblock %}
+
+{% block content %}
+<div class="container cart-page">
+  <h1>Your Shopping Cart</h1>
+
+  {% if cart_items %}
+  <table class="cart-table">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Price</th>
+        <th>Quantity</th>
+        <th>Total</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in cart_items %}
+      <tr>
+        <td class="product-info">
+          <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+          <span>{{ item.product.name }}</span>
+        </td>
+        <td>${{ item.product.price }}</td>
+        <td>
+          <button class="cart-action" data-product="{{ item.product.id }}" data-action="delete">−</button>
+          <span class="quantity">{{ item.quantity }}</span>
+          <button class="cart-action" data-product="{{ item.product.id }}" data-action="add">+</button>
+        </td>
+        <td>${{ item.total_price }}</td>
+        <td>
+          <button class="cart-action remove" data-product="{{ item.product.id }}" data-action="remove">🗑</button>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="cart-summary">
+    <h3>Total: ${{ total }}</h3>
+    <a href="#" class="btn-checkout">Proceed to Checkout</a>
+  </div>
+  {% else %}
+  <p>Your cart is empty.</p>
+  {% endif %}
+</div>
+{% endblock %}
