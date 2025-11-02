@@ -1,9 +1,5 @@
-﻿{% extends 'base.html' %}
-{% load static %}
-
-{% block title %}Sign Up — OnlineShop{% endblock %}
-
-{% block content %}
+﻿{% extends 'base.html' %} {% load static %} {% block title %}Sign Up —
+OnlineShop{% endblock %} {% block content %}
 <div class="container py-5">
   <div class="row justify-content-center">
     <div class="col-md-6 col-lg-4">
@@ -11,26 +7,56 @@
         <h2 class="text-center mb-4 fw-bold">Create Account</h2>
 
         <form method="POST" action="">
-          {% csrf_token %}
+          {% csrf_token %} {% if form.errors %}
+          <div class="alert alert-danger">{{ form.errors }}</div>
+          {% endif %}
 
           <div class="mb-3">
             <label for="id_username" class="form-label">Username</label>
-            <input type="text" name="username" id="id_username" class="form-control" placeholder="Enter your username" required />
+            <input
+              type="text"
+              name="username"
+              id="id_username"
+              class="form-control"
+              value="{{ form.username.value|default:'' }}"
+              required
+            />
           </div>
 
           <div class="mb-3">
             <label for="id_email" class="form-label">Email address</label>
-            <input type="email" name="email" id="id_email" class="form-control" placeholder="Enter your email" required />
+            <input
+              type="email"
+              name="email"
+              id="id_email"
+              class="form-control"
+              value="{{ form.email.value|default:'' }}"
+              required
+            />
           </div>
 
           <div class="mb-3">
             <label for="id_password1" class="form-label">Password</label>
-            <input type="password" name="password1" id="id_password1" class="form-control" placeholder="Enter your password" required />
+            <input
+              type="password"
+              name="password1"
+              id="id_password1"
+              class="form-control"
+              required
+            />
           </div>
 
           <div class="mb-3">
-            <label for="id_password2" class="form-label">Confirm Password</label>
-            <input type="password" name="password2" id="id_password2" class="form-control" placeholder="Confirm your password" required />
+            <label for="id_password2" class="form-label"
+              >Confirm Password</label
+            >
+            <input
+              type="password"
+              name="password2"
+              id="id_password2"
+              class="form-control"
+              required
+            />
           </div>
 
           <button type="submit" class="btn btn-dark w-100 mt-3">Sign Up</button>
@@ -38,7 +64,9 @@
 
         <p class="text-center mt-3 mb-0">
           Already have an account?
-          <a href="{% url 'login' %}" class="text-decoration-none fw-semibold">Login here</a>
+          <a href="{% url 'login' %}" class="text-decoration-none fw-semibold"
+            >Login here</a
+          >
         </p>
       </div>
     </div>

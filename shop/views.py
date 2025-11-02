@@ -79,7 +79,6 @@ def update_cart(request):
         response.set_cookie('cart', json.dumps(cart))
         return response
 
-    
 def cart_view(request):
     items, cart = get_cart_and_items(request)
 
@@ -134,7 +133,7 @@ def login_page(request):
     items, cart = get_cart_and_items(request)
 
     if request.user.is_authenticated:
-        return redirect('profile')
+        return redirect('homepage')
     else:
         if request.method == 'POST':
             username = request.POST.get('username') 
@@ -144,7 +143,7 @@ def login_page(request):
 
             if user is not None:
                 login(request, user)
-                return redirect('profile')
+                return redirect('homepage')
             else:
                 messages.info(request, 'Username or password is incorrect')
 
@@ -177,10 +176,3 @@ def signup(request):
     context = {'form': form, 'cart': cart}
     return render(request, 'signup.html', context)
 
-# @csrf_exempt
-# @login_required(login_url='login')
-# def profile(request):
-#     items, cart = get_cart_and_items(request)
-
-#     context = {'cart': cart}
-#     return render(request, 'profile.html', context)
