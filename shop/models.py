@@ -49,7 +49,7 @@ class CartItem(models.Model):
     quantity = models.IntegerField(default=0)
 
     def __str__(self):
-        return f"{self.product.name} ({self.quantity})"
+        return f"{self.product.title} ({self.quantity})"
 
     @property
     def total_price(self):

@@ -1,8 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
 from datetime import datetime
 from requests import request
-from .models import Product, Cart, CartItem
+from decimal import Decimal
+from .models import *
+from .forms import CreateUserForm
 import json
 
 def homepage(request):
@@ -23,37 +28,159 @@ def product_detail(request, pk):
         "year": datetime.now().year
     })
 
-def cart_view(request):
-    if request.user.is_authenticated:
-        cart, _ = Cart.objects.get_or_create(customer=request.user.customer)
-        cart_items = cart.items.select_related('product')
-        total = sum(item.product.price * item.quantity for item in cart_items)
-    else:
-        cart_items = []
-        total = 0
-
-    return render(request, "cart.html", {"cart_items": cart_items, "total": total})
-
+@csrf_exempt
 def update_cart(request):
     data = json.loads(request.body)
-    productId = data['productId']
+    product_id = data['productId']
     action = data['action']
+    quantity = int(data.get('quantity', 1))
 
-    customer = request.user.customer
-    product = Product.objects.get(id=productId)
-    cart, _ = Cart.objects.get_or_create(customer=customer)
+    product = Product.objects.get(id=product_id)
 
-    cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-    if action == 'add':
-        cart_item.quantity += 1
-    elif action == 'delete':
-        cart_item.quantity -= 1
-    elif action == 'remove':
-        cart_item.quantity = 0
+    if request.user.is_authenticated:
+        customer, _ = Customer.objects.get_or_create(user=request.user)
+        cart, _ = Cart.objects.get_or_create(customer=customer)
+        cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
 
-    if cart_item.quantity <= 0:
-        cart_item.delete()
+        if action == 'add':
+            cart_item.quantity += quantity
+        elif action == 'delete':
+            cart_item.quantity -= 1
+        elif action == 'remove':
+            cart_item.quantity = 0
+
+        if cart_item.quantity <= 0:
+            cart_item.delete()
+        else:
+            cart_item.save()
+
+        return JsonResponse({'message': 'Cart updated successfully (auth user)'})
+
     else:
-        cart_item.save()
+        try:
+            cart = json.loads(request.COOKIES['cart'])
+        except KeyError:
+            cart = {}
 
-    return JsonResponse({'message': 'Cart updated'})
+        if product_id not in cart:
+            cart[product_id] = {'quantity': 0}
+
+        if action == 'add':
+            cart[product_id]['quantity'] += quantity
+        elif action == 'delete':
+            cart[product_id]['quantity'] -= 1
+        elif action == 'remove':
+            cart[product_id]['quantity'] = 0
+
+        if cart[product_id]['quantity'] <= 0:
+            del cart[product_id]
+
+        response = JsonResponse({'message': 'Cart updated successfully (guest)'})
+        response.set_cookie('cart', json.dumps(cart))
+        return response
+
+    
+def cart_view(request):
+    items, cart = get_cart_and_items(request)
+
+    context = {
+        'cart_items': items,
+        'total': getattr(cart, 'total_with_tax', 0) if hasattr(cart, 'total_with_tax') else getattr(cart, 'get_total_price', 0),
+    }
+    return render(request, 'cart.html', context)
+
+def get_cart_and_items(request):
+    if request.user.is_authenticated:
+        customer, _ = Customer.objects.get_or_create(user=request.user)
+        cart, _ = Cart.objects.get_or_create(customer=customer)
+        items = cart.items.all()
+        cart_items = sum([item.quantity for item in items])
+
+        return items, cart
+
+    else:
+        try:
+            order = json.loads(request.COOKIES['cart'])
+        except KeyError:
+            order = {}
+
+        items = []
+        cart = {'total_without_tax': 0, 'tax': 0, 'total_with_tax': 0, 'total_quantity': 0}
+
+        for i in order:
+            product = Product.objects.get(id=i)
+            quantity = order[i]['quantity']
+            total = product.price * quantity
+            tax = round(total * Decimal(0.2), 2)
+            total_with_tax = total + tax
+
+            cart['total_without_tax'] += total
+            cart['total_with_tax'] += total_with_tax
+            cart['tax'] += tax
+            cart['total_quantity'] += quantity
+
+            item = {
+                'product': product,
+                'quantity': quantity,
+                'total_price': total,
+            }
+            items.append(item)
+
+        return items, cart
+
+@csrf_exempt
+def login_page(request):
+
+    items, cart = get_cart_and_items(request)
+
+    if request.user.is_authenticated:
+        return redirect('profile')
+    else:
+        if request.method == 'POST':
+            username = request.POST.get('username') 
+            password = request.POST.get('password')
+
+            user = authenticate(request, username=username, password=password)
+
+            if user is not None:
+                login(request, user)
+                return redirect('profile')
+            else:
+                messages.info(request, 'Username or password is incorrect')
+
+    context = {'cart': cart}
+    return render(request, 'login.html', context)
+
+@csrf_exempt
+def logout_user(request):
+    logout(request)
+    messages.success(request, 'You have successfully logged out')
+    return redirect('login')
+
+@csrf_exempt
+def signup(request):
+    form = CreateUserForm()
+    items, cart = get_cart_and_items(request)
+
+    if request.user.is_authenticated:
+        return redirect('profile')
+    else:
+        if request.method == 'POST':
+            form = CreateUserForm(request.POST)
+            if form.is_valid():
+                user = form.save()
+                Customer.objects.create(user=user)
+                current_user = form.cleaned_data.get('username')
+                messages.success(request, 'Account was created for ' + current_user)
+                return redirect('login')
+    
+    context = {'form': form, 'cart': cart}
+    return render(request, 'signup.html', context)
+
+# @csrf_exempt
+# @login_required(login_url='login')
+# def profile(request):
+#     items, cart = get_cart_and_items(request)
+
+#     context = {'cart': cart}
+#     return render(request, 'profile.html', context)

@@ -1,28 +1,26 @@
 ﻿document.addEventListener('DOMContentLoaded', () => {
-  const addBtn = document.getElementById('add-to-cart-btn');
-  if (!addBtn) return;
+  const buttons = document.querySelectorAll('.cart-action');
 
-  addBtn.addEventListener('click', () => {
-    const productId = addBtn.dataset.product;
-    const quantity = parseInt(document.getElementById('quantity').value);
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const productId = btn.dataset.product;
+      const action = btn.dataset.action;
 
-    fetch('/update-cart/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken'),
-      },
-      body: JSON.stringify({
-        productId: productId,
-        action: 'add',
-        quantity: quantity,
-      }),
-    })
-    .then(res => res.json())
-    .then(data => {
-      console.log(data);
-    })
-    .catch(err => console.error('Error:', err));
+      fetch('/update-cart/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken'),
+        },
+        body: JSON.stringify({
+          productId: productId,
+          action: action,
+          quantity: 1
+        }),
+      })
+      .then(res => res.json())
+      .then(() => location.reload());
+    });
   });
 });
 
@@ -30,9 +28,9 @@ function getCookie(name) {
   let cookieValue = null;
   if (document.cookie && document.cookie !== '') {
     const cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-      const cookie = cookies[i].trim();
-      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith(name + '=')) {
         cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
         break;
       }

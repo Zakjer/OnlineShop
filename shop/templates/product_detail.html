@@ -1,6 +1,6 @@
 ﻿{% extends 'base.html' %}
 {% load static %}
-{% block title %}{{ product.name }} — OnlineShop{% endblock %}
+{% block title %}{{ product.title }} — OnlineShop{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'shop/css/product.css' %}">
@@ -10,13 +10,12 @@
 <div class="container product-detail">
   <div class="row">
     <div class="col-md-6 product-image text-center">
-      <img src="{{ product.image.url }}" alt="{{ product.name }}" class="img-fluid rounded">
+      <img src="{{ product.image.url }}" alt="{{ product.title }}" class="img-fluid rounded">
     </div>
 
     <div class="col-md-6 product-info">
-      <h1 class="fw-bold">{{ product.name }}</h1>
+      <h1 class="fw-bold">{{ product.title }}</h1>
       <p class="text-muted mb-1">Category: {{ product.category.name }}</p>
-      <p class="text-muted mb-3">Brand: {{ product.brand }}</p>
 
       {% if product.discount_price %}
       <div class="price">
@@ -62,9 +61,9 @@
       {% for p in related_products %}
       <div class="col-6 col-md-4 col-lg-3">
         <div class="card h-100 border-0 shadow-sm">
-          <img src="{{ p.image.url }}" alt="{{ p.name }}" class="card-img-top">
+          <img src="{{ p.image.url }}" alt="{{ p.title }}" class="card-img-top">
           <div class="card-body text-center">
-            <h6 class="card-title">{{ p.name }}</h6>
+            <h6 class="card-title">{{ p.title }}</h6>
             <p class="fw-bold text-primary mb-2">${{ p.price }}</p>
             <a href="{% url 'product_detail' p.id %}" class="btn btn-outline-dark btn-sm">View</a>
           </div>
