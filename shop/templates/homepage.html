@@ -5,12 +5,15 @@
 Home — OnlineShop
 {% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'shop/css/homepage.css' %}">
+{% endblock %}
+
 {% block main_class %}
 no-top-gap
 {% endblock %}
 
 {% block content %}
-
 <section
   class="hero text-center text-white py-5"
   style="background: linear-gradient(135deg, #1a1a1a, #333)"
@@ -33,30 +36,23 @@ no-top-gap
     <div class="row g-4">
       {% for product in products %}
       <div class="col-12 col-sm-6 col-md-4 col-lg-3">
-        <div class="card h-100 shadow-sm">
-          {% if product.image %}
-          <img
-            src="{{ product.image.url }}"
-            class="card-img-top"
-            alt="{{ product.title }}"
-          />
-          {% else %}
-          <img
-            src="{% static 'shop/images/default.png' %}"
-            class="card-img-top"
-            alt="No image available"
-          />
-          {% endif %}
+        <div class="card h-100 shadow-sm border-0">
+          <div class="image-wrapper">
+            {% if product.image %}
+              <img src="{{ product.image.url }}" alt="{{ product.title }}" class="product-thumb">
+            {% else %}
+              <img src="{% static 'shop/images/default.png' %}" alt="No image available" class="product-thumb">
+            {% endif %}
+          </div>
 
-          <div class="card-body text-center">
-            <h5 class="card-title">{{ product.name }}</h5>
-            <p class="card-text fw-bold">${{ product.price }}</p>
-            <a
-              href="{% url 'product_detail' product.id %}"
-              class="btn btn-outline-dark btn-sm"
-            >
-              View Details
-            </a>
+          <div class="card-body text-center d-flex flex-column">
+            <h6 class="card-title fw-semibold mb-2">{{ product.title }}</h6>
+            <p class="card-text fw-bold text-primary mb-2">${{ product.price }}</p>
+            <div class="mt-auto">
+              <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-dark btn-sm">
+                View Details
+              </a>
+            </div>
           </div>
         </div>
       </div>

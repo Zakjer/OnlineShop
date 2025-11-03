@@ -176,3 +176,17 @@ def signup(request):
     context = {'form': form, 'cart': cart}
     return render(request, 'signup.html', context)
 
+def about_view(request):
+    return render(request, 'about.html')
+
+def contact_view(request):
+    return render(request, 'contact.html')
+
+def products_by_category(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    products = Product.objects.filter(category=category)
+    return render(request, 'products.html', {
+        'category': category,
+        'products': products
+    })
+

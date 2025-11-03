@@ -6,7 +6,12 @@
 <div class="container product-detail">
   <div class="row">
     <div class="col-md-6 product-image text-center">
-      <img src="{{ product.image.url }}" alt="{{ product.title }}" class="img-fluid rounded">
+      <img 
+  src="{{ product.image.url }}" 
+  alt="{{ product.title }}" 
+  class="img-fluid rounded product-img"
+/>
+
     </div>
 
     <div class="col-md-6 product-info">
@@ -57,7 +62,11 @@
       {% for p in related_products %}
       <div class="col-6 col-md-4 col-lg-3">
         <div class="card h-100 border-0 shadow-sm">
-          <img src="{{ p.image.url }}" alt="{{ p.title }}" class="card-img-top">
+          <img 
+  src="{{ p.image.url }}" 
+  alt="{{ p.title }}" 
+  class="card-img-top related-img"
+/>
           <div class="card-body text-center">
             <h6 class="card-title">{{ p.title }}</h6>
             <p class="fw-bold text-primary mb-2">${{ p.price }}</p>
