@@ -111,7 +111,11 @@
                 class="dropdown-menu dropdown-menu-end"
                 aria-labelledby="userMenu"
               >
-                <li><a class="dropdown-item" href="#">My Profile</a></li>
+                <li>
+                  <a class="dropdown-item" href="{% url 'profile' %}"
+                    >My Profile</a
+                  >
+                </li>
                 <li><hr class="dropdown-divider" /></li>
                 <li>
                   <a

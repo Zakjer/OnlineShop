@@ -1,13 +1,14 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from datetime import datetime
 from requests import request
 from decimal import Decimal
 from .models import *
-from .forms import CreateUserForm
+from .forms import *
 import json
 
 def homepage(request):
@@ -81,10 +82,26 @@ def update_cart(request):
 
 def cart_view(request):
     items, cart = get_cart_and_items(request)
+    total = 0
+    normalized_items = []
+
+    for item in items:
+        if isinstance(item, dict):
+                total += float(item.get('total_price', 0))
+                normalized_items.append(item)
+
+        else:
+            total += float(item.total_price)
+            normalized_items.append({
+                'product': item.product,
+                'quantity': item.quantity,
+                'total_price': item.total_price,
+            })
 
     context = {
         'cart_items': items,
-        'total': getattr(cart, 'total_with_tax', 0) if hasattr(cart, 'total_with_tax') else getattr(cart, 'get_total_price', 0),
+        'cart': cart,
+        'total': total,
     }
     return render(request, 'cart.html', context)
 
@@ -181,6 +198,23 @@ def about_view(request):
 
 def contact_view(request):
     return render(request, 'contact.html')
+
+@login_required
+def profile_view(request):
+    return render(request, 'profile.html')
+
+@login_required
+def edit_profile_view(request):
+    if request.method == 'POST':
+        form = EditProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your profile has been updated successfully!")
+            return redirect('profile')
+    else:
+        form = EditProfileForm(instance=request.user)
+
+    return render(request, 'edit_profile.html', {'form': form})
 
 def products_by_category(request, category_id):
     category = get_object_or_404(Category, id=category_id)
