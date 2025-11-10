@@ -6,7 +6,7 @@ from .models import Category, Product, Customer, Cart, CartItem
 class CategoryAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'slug')
     search_fields = ('name',)
-    prepopulated_fields = {'slug': ('name',)}  # auto-fills slug from name
+    prepopulated_fields = {'slug': ('name',)}
     ordering = ('name',)
 
 

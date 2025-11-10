@@ -47,12 +47,15 @@ no-top-gap
 
           <div class="card-body text-center d-flex flex-column">
             <h6 class="card-title fw-semibold mb-2">{{ product.title }}</h6>
-            <p class="card-text fw-bold text-primary mb-2">${{ product.price }}</p>
-            <div class="mt-auto">
-              <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-dark btn-sm">
-                View Details
-              </a>
-            </div>
+         <p class="product-price mb-3">${{ product.price }}</p>
+<div class="mt-auto">
+  <a href="{% url 'product_detail' product.id %}" class="btn-view-details">
+    View Details
+  </a>
+</div>
+
+
+
           </div>
         </div>
       </div>

@@ -29,6 +29,14 @@ def product_detail(request, pk):
         "year": datetime.now().year
     })
 
+def products_by_category(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    products = Product.objects.filter(category=category)
+    return render(request, 'products.html', {
+        'category': category,
+        'products': products
+    })
+
 @csrf_exempt
 def update_cart(request):
     data = json.loads(request.body)
@@ -215,12 +223,4 @@ def edit_profile_view(request):
         form = EditProfileForm(instance=request.user)
 
     return render(request, 'edit_profile.html', {'form': form})
-
-def products_by_category(request, category_id):
-    category = get_object_or_404(Category, id=category_id)
-    products = Product.objects.filter(category=category)
-    return render(request, 'products.html', {
-        'category': category,
-        'products': products
-    })
 
