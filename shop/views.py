@@ -40,7 +40,7 @@ def products_by_category(request, category_id):
 @csrf_exempt
 def update_cart(request):
     data = json.loads(request.body)
-    product_id = data['productId']
+    product_id = str(data['productId'])
     action = data['action']
     quantity = int(data.get('quantity', 1))
 
