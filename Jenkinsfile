@@ -4,7 +4,10 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'jenkins_test', url: 'git@github.com:Zakjer/OnlineShop.git'
+                git branch: 'jenkins_test',
+                url: 'git@github.com:Zakjer/OnlineShop.git',
+                credentialsId: 'github-ssh'
+                }
             }
         }
 
