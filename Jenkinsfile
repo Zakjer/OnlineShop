@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/Zakjer/OnlineShop.git'
+                git branch: 'jenkins_test', url: 'https://github.com/Zakjer/OnlineShop.git'
             }
         }
 
