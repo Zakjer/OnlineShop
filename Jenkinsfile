@@ -1,19 +1,14 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'python:3.11-slim'
+        }
+    }
 
     stages {
         stage('Checkout') {
             steps {
                 checkout scm
-            }
-        }
-
-        stage('Install Python') {
-            steps {
-                sh '''
-                    sudo apt-get update
-                    sudo apt-get install -y python3.11 python3.11-venv python3-pip
-                '''
             }
         }
 
