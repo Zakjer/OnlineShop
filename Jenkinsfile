@@ -7,9 +7,9 @@ pipeline {
             }
         }
 
-        stage('Testing') {
+        stage('Running unit tests') {
             steps {
-                sh 'echo hello'
+                sh 'python manage.py test'
             }
         }
     }
