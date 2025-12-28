@@ -4,7 +4,6 @@ pipeline {
             filename 'Dockerfile'
             args '-u root:root'
             reuseNode true
-            additionalBuildArgs '--stop-timeout 10'
         }
     }
 
