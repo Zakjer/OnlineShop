@@ -17,18 +17,28 @@ pipeline {
         stage('Install dependencies') {
             steps {
                 sh '''
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+                    python -m pip install --upgrade pip
+                    python -m pip install -r requirements.txt
                 '''
             }
         }
 
         stage('Running tests and checks') {
             steps {
-                sh '''
-                    python manage.py check
-                    python manage.py test
-                '''
+                script {
+                    try {
+                        sh '''
+                            python manage.py check
+                            python manage.py test
+                        '''
+                    } catch (err) {
+                        if (!err.toString().contains("Failed to kill container")) {
+                            throw err
+                        } else {
+                            echo "Warning: Jenkins failed to stop Docker container, ignoring."
+                        }
+                    }
+                }
             }
         }
     }
