@@ -5,18 +5,17 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 git branch: 'jenkins_test',
-                url: 'git@github.com:Zakjer/OnlineShop.git',
-                credentialsId: 'github-ssh'
-                }
+                    url: 'git@github.com:Zakjer/OnlineShop.git',
+                    credentialsId: 'github-ssh'
             }
         }
 
         stage('Testing') {
             steps {
                 script {
-                        sh 'echo hello'
+                    sh 'echo hello'
                 }
             }
         }
     }
-
+}
