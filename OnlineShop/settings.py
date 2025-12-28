@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -80,16 +81,24 @@ WSGI_APPLICATION = 'OnlineShop.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'shop_database',
-        'USER': 'root',
-        'PASSWORD': os.getenv('DB_PASSWORD'),
-        'HOST': '127.0.0.1',
-        'PORT': '3306'
+if 'test' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'shop_database',
+            'USER': 'root',
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            'HOST': '127.0.0.1',
+            'PORT': '3306'
+        }
+    }
 
 
 # Password validation
