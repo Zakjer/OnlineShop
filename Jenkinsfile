@@ -1,52 +1,34 @@
 pipeline {
-    agent any
+    agent {
+        dockerfile {
+            filename 'Dockerfile'
+            args '--init -u root:root'
+        }
+    }
 
     stages {
-
         stage('Checkout') {
             steps {
                 checkout scm
             }
         }
 
-        stage('Build debug image') {
+        stage('Install dependencies') {
             steps {
                 sh '''
-                    set -euxo pipefail
-                    docker build -t debug-image .
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
                 '''
             }
         }
 
-        stage('Run tests in container') {
+        stage('Running tests and checks') {
             steps {
                 sh '''
-                    set -euxo pipefail
-
-                    docker run --name debug-container --init debug-image sh -c "
-                        pip install --upgrade pip &&
-                        pip install -r requirements.txt &&
-                        python manage.py check &&
-                        python manage.py test
-                    "
+                    python manage.py check
+                    python manage.py test
                 '''
             }
-        }
-    }
-
-    post {
-        failure {
-            echo 'Pipeline failed — keeping container alive for debugging'
-            sh '''
-                docker ps -a | grep debug-container || true
-                echo "You can now inspect the container:"
-                echo "  docker logs debug-container"
-                echo "  docker exec -it debug-container sh"
-            '''
-        }
-
-        always {
-            echo 'Pipeline finished'
         }
     }
 }
