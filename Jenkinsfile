@@ -1,7 +1,7 @@
 pipeline {
     agent {
         dockerfile {
-            filename 'Dockerfile'
+            filename 'Dockerfile.ci'
             args '--init -u root:root'
         }
     }
@@ -28,6 +28,28 @@ pipeline {
                     python manage.py check
                     python manage.py test
                 '''
+            }
+        }
+
+        stage('Build docker image') {
+            steps {
+                script {
+                        sh 'docker build -t online-shop:${BUILD_NUMBER} -t online-shop:latest .'
+                }
+            }
+        }
+
+        stage('Push image to DockerHub') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'dockerhubpwd', variable: 'DOCKER_PASS')]) {
+                        sh '''
+                            echo "$DOCKER_PASS" | docker login -u zakjer2003 --password-stdin || exit 1
+                            docker tag online-shop:latest zakjer2003/online-shop:${BUILD_NUMBER}
+                            docker push zakjer2003/online-shop:${BUILD_NUMBER}
+                        '''
+                    }
+                }
             }
         }
     }
