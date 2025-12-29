@@ -1,12 +1,16 @@
 pipeline {
-    agent {
-        dockerfile {
-            filename 'Dockerfile'
-             args '--init -u root:root'
-        }
-    }
+    agent any
 
     stages {
+        stage('Manual docker run') {
+            steps {
+                sh '''
+                docker build -t debug-image .
+                docker run --name debug-container -it debug-image bash
+                '''
+            }
+        }
+
         stage('Checkout') {
             steps {
                 checkout scm
