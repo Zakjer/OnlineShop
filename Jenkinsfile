@@ -2,14 +2,14 @@ pipeline {
     agent any
 
     stages {
-        stage('Manual docker run') {
+        stage('Debug container') {
             steps {
                 sh '''
+                set -eux
                 docker build -t debug-image .
-                docker run --name debug-container -it debug-image bash
+                docker run --name debug-container --init debug-image sh -c "sleep 300"
                 '''
             }
-        }
 
         stage('Checkout') {
             steps {
