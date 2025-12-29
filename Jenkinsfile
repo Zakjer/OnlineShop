@@ -2,14 +2,6 @@ pipeline {
     agent any
 
     stages {
-        stage('Debug container') {
-            steps {
-                sh '''
-                set -eux
-                docker build -t debug-image .
-                docker run --name debug-container --init debug-image sh -c "sleep 300"
-                '''
-            }
 
         stage('Checkout') {
             steps {
@@ -17,23 +9,44 @@ pipeline {
             }
         }
 
-        stage('Install dependencies') {
+        stage('Build debug image') {
             steps {
                 sh '''
-                    pip install --upgrade pip
-                    pip install -r requirements.txt
+                    set -euxo pipefail
+                    docker build -t debug-image .
                 '''
             }
         }
 
-        stage('Running tests and checks') {
+        stage('Run tests in container') {
             steps {
                 sh '''
-                    python manage.py check
-                    python manage.py test
+                    set -euxo pipefail
+
+                    docker run --name debug-container --init debug-image sh -c "
+                        pip install --upgrade pip &&
+                        pip install -r requirements.txt &&
+                        python manage.py check &&
+                        python manage.py test
+                    "
                 '''
             }
         }
     }
-}
+
+    post {
+        failure {
+            echo 'Pipeline failed — keeping container alive for debugging'
+            sh '''
+                docker ps -a | grep debug-container || true
+                echo "You can now inspect the container:"
+                echo "  docker logs debug-container"
+                echo "  docker exec -it debug-container sh"
+            '''
+        }
+
+        always {
+            echo 'Pipeline finished'
+        }
+    }
 }
