@@ -12,6 +12,16 @@ jenkins:
     loggedInUsersCanDoAnything:
       allowAnonymousRead: false
 
+credentials:
+  system:
+    domainCredentials:
+      - credentials:
+          - secretFile:
+              scope: GLOBAL
+              id: azure-creds
+              file: /var/jenkins_home/az-creds.json
+              description: "Azure Service Principal credentials"
+
 jobs:
   - script: >
       pipelineJob('OnlineShop-automation') {
