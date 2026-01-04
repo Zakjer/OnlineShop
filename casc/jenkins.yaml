@@ -14,7 +14,7 @@ jenkins:
 
 jobs:
   - script: >
-      pipelineJob('onlineshop') {
+      pipelineJob('OnlineShop-automation') {
         description('CI/CD pipeline for OnlineShop')
 
         definition {
@@ -23,7 +23,6 @@ jobs:
               git {
                 remote {
                   url('https://github.com/Zakjer/OnlineShop.git')
-                  credentials('github-creds')
                 }
                 branch('jenkins_test')
               }
@@ -32,17 +31,6 @@ jobs:
           }
         }
       }
-
-credentials:
-  system:
-    domainCredentials:
-      - credentials:
-          - usernamePassword:
-              scope: GLOBAL
-              id: github-creds
-              username: github-user
-              password: github-token
-              description: GitHub access token
 
 unclassified:
   location:
