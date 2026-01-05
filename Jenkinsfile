@@ -52,6 +52,8 @@ pipeline {
         stage('Azure authentication') {
             steps {
                 sh '''
+                    echo $CLIENT_ID
+                    echo $TENANT_ID
                     az login --service-principal \
                         --username "$CLIENT_ID" \
                         --password "$CLIENT_SECRET" \
