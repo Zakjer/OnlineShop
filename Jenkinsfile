@@ -65,7 +65,7 @@ pipeline {
 
                         az account set --subscription "\$SUBSCRIPTION_ID"
 
-                        echo "Enabling admin user on ACR..."
+                        echo "Enabling admin user on ACR"
                         az acr update -n $ACR_NAME --admin-enabled true
                     """
                 }
@@ -93,8 +93,8 @@ pipeline {
 				az container create \
                     --name $ACI_NAME \
                     --resource-group $RESOURCE_GROUP \
-                    --image $ACR_LOGIN_SERVER/$IMAGE_NAME:$IMAGE_TAG \
-                    --registry-login-server $ACR_LOGIN_SERVER \
+                    --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG \
+                    --registry-login-server $ACR_SERVER \
                     --registry-username $(az acr credential show --name $ACR_NAME --query username -o tsv) \
                     --registry-password $(az acr credential show --name $ACR_NAME --query passwords[0].value -o tsv) \
                     --dns-name-label online-shop-${BUILD_NUMBER} \
