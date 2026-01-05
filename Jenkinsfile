@@ -76,8 +76,8 @@ pipeline {
                             az provider register --namespace Microsoft.ContainerRegistry
                             echo "Waiting for registration to complete..."
                             sleep 15
-                            """
                         fi
+                        """
                 }
             }
         }
