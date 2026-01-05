@@ -44,7 +44,7 @@ pipeline {
         stage('Build docker image') {
             steps {
                 sh '''
-                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest .'
+                    docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest .
                 '''
             }
         }
@@ -94,7 +94,7 @@ pipeline {
                     --registry-login-server $ACR_LOGIN_SERVER \
                     --registry-username $(az acr credential show --name $ACR_NAME --query username -o tsv) \
                     --registry-password $(az acr credential show --name $ACR_NAME --query passwords[0].value -o tsv) \
-                    --dns-name-label java-app-${BUILD_NUMBER} \
+                    --dns-name-label online-shop-${BUILD_NUMBER} \
                     --ports 9000 \
                     --location $ACI_REGION \
                     --os-type Linux \
@@ -115,7 +115,6 @@ pipeline {
                 echo "Application URL: http://$APP_URL"
     			'''
 			}
-		    }
-        
+		}
     }
 }
