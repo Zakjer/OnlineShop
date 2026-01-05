@@ -36,7 +36,6 @@ credentials:
               id: azure-subscription-id
               description: "Azure subscription ID"
               secret: ${SUBSCRIPTION_ID}
-
 jobs:
   - script: >
       pipelineJob('OnlineShop-automation') {
