@@ -53,19 +53,14 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'azure-creds', variable: 'AZURE_CRED')]) {
                     sh '''
-                        echo "Using credential file: $AZURE_CRED"
-                        cat "$AZURE_CRED"
+                        CLIENT_ID=$(jq -r .clientId $AZURE_CRED)
+                        CLIENT_SECRET=$(jq -r .clientSecret $AZURE_CRED)
+                        TENANT_ID=$(jq -r .tenantId $AZURE_CRED)
+                        SUBSCRIPTION_ID=$(jq -r .subscriptionId $AZURE_CRED)
 
-                        CLIENT_ID=$(jq -r .clientId "$AZURE_CRED")
-                        CLIENT_SECRET=$(jq -r .clientSecret "$AZURE_CRED")
-                        TENANT_ID=$(jq -r .tenantId "$AZURE_CRED")
-                        SUBSCRIPTION_ID=$(jq -r .subscriptionId "$AZURE_CRED")
-
-                        echo "Logging in to Azure..."
-                        az login --service-principal \
-                            --username "$CLIENT_ID" \
-                            --password "$CLIENT_SECRET" \
-                            --tenant "$TENANT_ID" > /dev/null
+                        az login --service-principal --username "$CLIENT_ID" \
+                                --password "$CLIENT_SECRET" \
+                                --tenant "$TENANT_ID"
 
                         az account set --subscription "$SUBSCRIPTION_ID"
                     '''

@@ -18,10 +18,10 @@ credentials:
       - credentials:
           - file:
               id: azure-creds
-              description: "Azure Service Principal credentials"
+              description: "Azure Service Principal JSON"
               fileName: az-creds.json
-              secretBytes: ${readFile:/var/jenkins_home/az-creds.json}
               scope: GLOBAL
+
 
 jobs:
   - script: >
