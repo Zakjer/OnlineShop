@@ -58,8 +58,7 @@ pipeline {
                     string(credentialsId: 'azure-subscription-id', variable: 'SUBSCRIPTION_ID')
                 ]) {
                     sh '''
-                        echo $CLIENT_ID
-                        echo $TENANT_ID
+                        env
                         az login --service-principal \
                             --username "$CLIENT_ID" \
                             --password "$CLIENT_SECRET" \
