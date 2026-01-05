@@ -71,7 +71,6 @@ pipeline {
 
         stage('Push image to Azure Container Registry') {
             steps {
-                withCredentials([file(credentialsId: 'azure-creds', variable: 'AZURE_CRED')]) {
                     sh '''
                             az acr login --name $ACR_NAME
 
@@ -81,7 +80,6 @@ pipeline {
                             echo "Pushing Docker image to ACR"
                             docker push $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG
                         '''
-                }
             }
         }
     }
