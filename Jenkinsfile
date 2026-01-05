@@ -64,6 +64,9 @@ pipeline {
                             --tenant "\$TENANT_ID"
 
                         az account set --subscription "\$SUBSCRIPTION_ID"
+
+                        echo "Enabling admin user on ACR..."
+                        az acr update -n $ACR_NAME --admin-enabled true
                     """
                 }
             }
