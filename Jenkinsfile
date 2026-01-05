@@ -51,16 +51,23 @@ pipeline {
 
         stage('Azure authentication') {
             steps {
-                sh '''
-                    echo $CLIENT_ID
-                    echo $TENANT_ID
-                    az login --service-principal \
-                        --username "$CLIENT_ID" \
-                        --password "$CLIENT_SECRET" \
-                        --tenant "$TENANT_ID"
+                withCredentials([
+                    string(credentialsId: 'azure-client-id', variable: 'CLIENT_ID'),
+                    string(credentialsId: 'azure-client-secret', variable: 'CLIENT_SECRET'),
+                    string(credentialsId: 'azure-tenant-id', variable: 'TENANT_ID'),
+                    string(credentialsId: 'azure-subscription-id', variable: 'SUBSCRIPTION_ID')
+                ]) {
+                    sh '''
+                        echo $CLIENT_ID
+                        echo $TENANT_ID
+                        az login --service-principal \
+                            --username "$CLIENT_ID" \
+                            --password "$CLIENT_SECRET" \
+                            --tenant "$TENANT_ID"
 
-                    az account set --subscription "$SUBSCRIPTION_ID"
-                '''
+                        az account set --subscription "$SUBSCRIPTION_ID"
+                    '''
+                }
             }
         }
 
