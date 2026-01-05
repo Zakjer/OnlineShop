@@ -53,10 +53,12 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'azure-creds', variable: 'AZURE_CRED')]) {
                     sh '''
-                            az login --service-principal --username $(jq -r .clientId $AZURE_CRED) \
-                                        --password $(jq -r .clientSecret $AZURE_CRED) \
-                                        --tenant $(jq -r .tenantId $AZURE_CRED) > /dev/null
-                                az account set --subscription $(jq -r .subscriptionId $AZURE_CRED)
+                            az login --service-principal \
+                            --username $(jq -r .clientId $AZURE_CRED) \
+                            --password $(jq -r .clientSecret $AZURE_CRED) \
+                            --tenant $(jq -r .tenantId $AZURE_CRED) > /dev/null
+    
+                            az account set --subscription $(jq -r .subscriptionId $AZURE_CRED)
                     '''
                 }
             }

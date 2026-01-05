@@ -16,11 +16,12 @@ credentials:
   system:
     domainCredentials:
       - credentials:
-          - secretFile:
-              scope: GLOBAL
-              id: azure-creds
-              file: /var/jenkins_home/az-creds.json
-              description: "Azure Service Principal credentials"
+          - file:
+            id: azure-creds 
+            description: "Azure Service Principal credentials"
+            secretBytes: ${readFile:/var/jenkins_home/az-creds.json}
+            scope: GLOBAL
+            fileName: /var/jenkins_home/az-creds.json
 
 jobs:
   - script: >
