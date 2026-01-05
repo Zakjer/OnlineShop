@@ -49,7 +49,7 @@ pipeline {
             }
         }
 
-        stage('Azure authentication') {
+        stage('Azure authentication and configuration') {
             steps {
                 withCredentials([
                     string(credentialsId: 'azure-client-id', variable: 'CLIENT_ID'),
@@ -67,7 +67,16 @@ pipeline {
 
                         echo "Enabling admin user on ACR"
                         az acr update -n $ACR_NAME --admin-enabled true
-                    """
+
+                        STATE=\$(az provider show --namespace Microsoft.ContainerRegistry --query "registrationState" -o tsv)
+                        echo "ACR Provider state: \$STATE"
+
+                        if [ "\$STATE" = "NotRegistered" ]; then
+                            echo "Registering ACR provider..."
+                            az provider register --namespace Microsoft.ContainerRegistry
+                            echo "Waiting for registration to complete..."
+                            sleep 15
+                            """
                 }
             }
         }
