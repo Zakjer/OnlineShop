@@ -15,13 +15,27 @@ jenkins:
 credentials:
   system:
     domainCredentials:
-      - credentials:
-          - file:
-              id: azure-creds
-              description: "Azure Service Principal JSON"
-              fileName: az-creds.json
+       - credentials:
+          - string:
               scope: GLOBAL
-
+              id: azure-client-id
+              description: "Azure Client ID"
+              secret: ${CLIENT_ID}
+          - string:
+              scope: GLOBAL
+              id: azure-client-secret
+              description: "Azure Client Secret"
+              secret: ${CLIENT_SECRET}
+          - string:
+              scope: GLOBAL
+              id: azure-tenant-id
+              description: "Azure Tenant ID"
+              secret: ${TENANT_ID}
+          - string:
+              scope: GLOBAL
+              id: azure-subscription-id
+              description: "Azure subscription ID"
+              secret: ${SUBSCRIPTION_ID}
 
 jobs:
   - script: >

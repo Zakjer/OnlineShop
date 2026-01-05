@@ -51,16 +51,17 @@ pipeline {
 
         stage('Azure authentication') {
             steps {
-                withCredentials([file(credentialsId: 'azure-creds', variable: 'AZURE_CRED')]) {
+                withCredentials([
+                    string(credentialsId: 'azure-client-id', variable: 'CLIENT_ID'),
+                    string(credentialsId: 'azure-client-secret', variable: 'CLIENT_SECRET'),
+                    string(credentialsId: 'azure-tenant-id', variable: 'TENANT_ID'),
+                    string(credentialsId: 'azure-subscription-id', variable: 'SUBSCRIPTION_ID')
+                ]) {
                     sh '''
-                        CLIENT_ID=$(jq -r .clientId $AZURE_CRED)
-                        CLIENT_SECRET=$(jq -r .clientSecret $AZURE_CRED)
-                        TENANT_ID=$(jq -r .tenantId $AZURE_CRED)
-                        SUBSCRIPTION_ID=$(jq -r .subscriptionId $AZURE_CRED)
-
-                        az login --service-principal --username "$CLIENT_ID" \
-                                --password "$CLIENT_SECRET" \
-                                --tenant "$TENANT_ID"
+                        az login --service-principal \
+                            --username "$CLIENT_ID" \
+                            --password "$CLIENT_SECRET" \
+                            --tenant "$TENANT_ID"
 
                         az account set --subscription "$SUBSCRIPTION_ID"
                     '''
