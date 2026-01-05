@@ -71,12 +71,13 @@ pipeline {
                         STATE=\$(az provider show --namespace Microsoft.ContainerRegistry --query "registrationState" -o tsv)
                         echo "ACR Provider state: \$STATE"
 
-                        if [ "\$STATE" = "NotRegistered" ]; then
+                        if [[ "\$STATE" = "NotRegistered" ]]; then
                             echo "Registering ACR provider..."
                             az provider register --namespace Microsoft.ContainerRegistry
                             echo "Waiting for registration to complete..."
                             sleep 15
                             """
+                        fi
                 }
             }
         }
