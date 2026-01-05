@@ -14,6 +14,10 @@ pipeline {
         RESOURCE_GROUP = 'inzynierka'
         ACI_NAME = 'xxx'
         ACI_REGION = 'xxx'
+        CLIENT_ID = "${env.CLIENT_ID}"
+        CLIENT_SECRET = "${env.CLIENT_SECRET}"
+        TENANT_ID = "${env.TENANT_ID}"
+        SUBSCRIPTION_ID = "${env.SUBSCRIPTION_ID}"
     }
 
     stages {
@@ -51,23 +55,14 @@ pipeline {
 
         stage('Azure authentication') {
             steps {
-                withCredentials([
-                    string(credentialsId: 'azure-client-id', variable: 'CLIENT_ID'),
-                    string(credentialsId: 'azure-client-secret', variable: 'CLIENT_SECRET'),
-                    string(credentialsId: 'azure-tenant-id', variable: 'TENANT_ID'),
-                    string(credentialsId: 'azure-subscription-id', variable: 'SUBSCRIPTION_ID')
-                ]) {
-                    sh """
-                        echo "CLIENT_ID: \$CLIENT_ID"
-                        echo "TENANT_ID: \$TENANT_ID"
-                        az login --service-principal \
-                            --username "\$CLIENT_ID" \
-                            --password "\$CLIENT_SECRET" \
-                            --tenant "\$TENANT_ID"
-
-                        az account set --subscription "\$SUBSCRIPTION_ID"
-                    """
-                }
+                sh '''
+                    echo "CLIENT_ID=$CLIENT_ID"
+                    az login --service-principal \
+                        --username "$CLIENT_ID" \
+                        --password "$CLIENT_SECRET" \
+                        --tenant "$TENANT_ID"
+                    az account set --subscription "$SUBSCRIPTION_ID"
+                '''
             }
         }
 
