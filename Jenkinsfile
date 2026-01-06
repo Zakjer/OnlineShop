@@ -68,14 +68,17 @@ pipeline {
                         echo "Enabling admin user on ACR"
                         az acr update -n $ACR_NAME --admin-enabled true
 
-                        STATE=\$(az provider show --namespace Microsoft.ContainerRegistry --query "registrationState" -o tsv)
-                        echo "ACR Provider state: \$STATE"
+                        STATE_ACR=\$(az provider show --namespace Microsoft.ContainerRegistry --query "registrationState" -o tsv)
+                        STATE_ACI=$(az provider show --namespace Microsoft.ContainerInstance --query "registrationState" -o tsv)
+                        echo "ACR Provider state: \$STATE_ACR"
+                        echo "ACI Provider state: \$STATE_ACI"
 
-                        if [ "\$STATE" = "NotRegistered" ]; then
-                            echo "Registering ACR provider..."
+                        if [ "\$STATE_ACR" = "NotRegistered" ] || [ "\$STATE_ACI" = "NotRegistered" ]; then
+                            echo "Registering Azure providers..."
                             az provider register --namespace Microsoft.ContainerRegistry
+                            az provider register --namespace Microsoft.ContainerInstance
                             echo "Waiting for registration to complete..."
-                            sleep 15
+                            sleep 60
                         fi
                         """
                 }
