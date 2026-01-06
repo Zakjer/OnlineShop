@@ -107,6 +107,14 @@ pipeline {
         stage('Deploy app to Azure Container Instance') {
             steps {
 			sh '''
+                echo "Checking if ACI $ACI_NAME exists..."
+                if az container show --resource-group $RESOURCE_GROUP --name $ACI_NAME &>/dev/null; then
+                    echo "Deleting existing ACI container..."
+                    az container delete --resource-group $RESOURCE_GROUP --name $ACI_NAME --yes
+                    echo "Waiting for deletion..."
+                    sleep 10
+                fi
+
 				echo 'Deploying Image to ACI'
 				az container create \
                     --name $ACI_NAME \
