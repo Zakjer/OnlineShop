@@ -2,7 +2,7 @@ pipeline {
     agent {
         dockerfile {
             filename 'Dockerfile.ci'
-            args '--init -u root:root -e CLIENT_ID -e CLIENT_SECRET -e TENANT_ID -e SUBSCRIPTION_ID'
+            args '--init -u root:root -e CLIENT_ID -e CLIENT_SECRET -e TENANT_ID -e SUBSCRIPTION_ID -e DB_PASSWORD -e SECRET_KEY'
         }
     }
 
@@ -36,10 +36,15 @@ pipeline {
 
         stage('Running tests and checks') {
             steps {
-                sh '''
-                    python manage.py check
-                    python manage.py test
-                '''
+                withCredentials([
+                    string(credentialsId: 'db-password', variable: 'DB_PASSWORD'),
+                    string(credentialsId: 'secret-key', variable: 'SECRET_KEY')
+                ]) {
+                    sh '''
+                        python manage.py check
+                        python manage.py test
+                    '''
+                }
             }
         }
 
