@@ -69,7 +69,7 @@ pipeline {
                         az acr update -n $ACR_NAME --admin-enabled true
 
                         STATE_ACR=\$(az provider show --namespace Microsoft.ContainerRegistry --query "registrationState" -o tsv)
-                        STATE_ACI=$(az provider show --namespace Microsoft.ContainerInstance --query "registrationState" -o tsv)
+                        STATE_ACI=\$(az provider show --namespace Microsoft.ContainerInstance --query "registrationState" -o tsv)
                         echo "ACR Provider state: \$STATE_ACR"
                         echo "ACI Provider state: \$STATE_ACI"
 
