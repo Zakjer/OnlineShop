@@ -28,6 +28,8 @@ pipeline {
                 sh '''
                     pip install --upgrade pip
                     pip install -r requirements.txt
+                    sh 'ls -la'
+                    sh 'cat .env'
                 '''
             }
         }
