@@ -10,7 +10,7 @@
         <div class="card h-100 shadow-sm border-0">
           {% if product.image %}
           <img
-            src="{{ product.image.url }}"
+            src="{% static product.image %}"
             class="card-img-top product-thumb"
             alt="{{ product.title }}"
           />

@@ -4,6 +4,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
+from django.core.mail import send_mail
+from django.conf import settings
 from datetime import datetime
 from requests import request
 from decimal import Decimal
@@ -205,6 +207,27 @@ def about_view(request):
     return render(request, 'about.html')
 
 def contact_view(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        message_text = request.POST.get('message')
+
+        full_message = f"From: {name} <{email}>\n\n{message_text}"
+
+        try:
+            send_mail(
+                subject=f"New contact form message from {name}",
+                message=full_message,
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=['zakrzewski.jeremiasz@gmail.com'],
+                fail_silently=False,
+            )
+            messages.success(request, "Your message has been sent successfully!")
+        except Exception as e:
+            messages.error(request, f"Failed to send message: {e}")
+
+        return redirect('contact')
+
     return render(request, 'contact.html')
 
 @login_required

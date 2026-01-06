@@ -39,7 +39,7 @@ no-top-gap
         <div class="card h-100 shadow-sm border-0">
           <div class="image-wrapper">
             {% if product.image %}
-              <img src="{{ product.image.url }}" alt="{{ product.title }}" class="product-thumb">
+              <img src="{% static product.image %}" alt="{{ product.title }}" class="product-thumb">
             {% else %}
               <img src="{% static 'shop/images/default.png' %}" alt="No image available" class="product-thumb">
             {% endif %}
