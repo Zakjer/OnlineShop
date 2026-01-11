@@ -2,7 +2,7 @@ pipeline {
     agent {
         dockerfile {
             filename 'Dockerfile.ci'
-            args '--init -u root:root -e CLIENT_ID -e CLIENT_SECRET -e TENANT_ID -e SUBSCRIPTION_ID -e DB_PASSWORD -e SECRET_KEY'
+            args '--init -u root:root -e CLIENT_ID -e CLIENT_SECRET -e TENANT_ID -e SUBSCRIPTION_ID -e DB_PASSWORD -e SECRET_KEY -e DB_HOST -e DB_USER -e DB_NAME'
         }
     }
 
@@ -104,6 +104,43 @@ pipeline {
             }
         }
 
+        stage('Create Azure MySQL') {
+            steps {
+                sh '''
+                set -e
+
+                echo "Checking MySQL server..."
+                if ! az mysql flexible-server show \
+                    --resource-group $RESOURCE_GROUP \
+                    --name $MYSQL_SERVER &>/dev/null; then
+
+                    echo "Creating MySQL Flexible Server..."
+                    az mysql flexible-server create \
+                        --resource-group $RESOURCE_GROUP \
+                        --name $MYSQL_SERVER \
+                        --location $ACI_REGION \
+                        --admin-user $DB_USER \
+                        --admin-password $DB_PASSWORD \
+                        --sku-name Standard_B1ms \
+                        --storage-size 20 \
+                        --version 8.0 \
+                        --public-access 0.0.0.0
+
+                    echo "Waiting for MySQL server to be ready..."
+                    sleep 60
+                else
+                    echo "MySQL server already exists"
+                fi
+
+                echo "Creating database if not exists..."
+                az mysql flexible-server db create \
+                    --resource-group $RESOURCE_GROUP \
+                    --server-name $MYSQL_SERVER \
+                    --name $DB_NAME || echo "Database already exists"
+                '''
+            }
+        }
+
         stage('Deploy app to Azure Container Instance') {
             steps {
 			sh '''
@@ -145,5 +182,16 @@ pipeline {
     			'''
 			}
 		}
+
+        stage('Load demo data into Azure MySQL') {
+            steps {
+                withCredentials([string(credentialsId: 'db-password', variable: 'DB_PASSWORD')]) {
+                    sh '''
+                    echo "Loading demo data..."
+                    mysql -h $DB_HOST -u $DB_USER -p$DB_PASSWORD $DB_NAME < data.sql
+                    '''
+                }
+            }
+        }
     }
 }
