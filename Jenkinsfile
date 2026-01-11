@@ -13,7 +13,7 @@ pipeline {
         ACR_SERVER = "${ACR_NAME}.azurecr.io"
         RESOURCE_GROUP = 'inzynierka'
         ACI_NAME = 'onelineshop-container'
-        ACI_REGION = 'eastus2'
+        ACI_REGION = 'westeurope'
         MYSQL_SERVER = 'onlineshop-mysql'
     }
 
