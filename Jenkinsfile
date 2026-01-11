@@ -13,7 +13,7 @@ pipeline {
         ACR_SERVER = "${ACR_NAME}.azurecr.io"
         RESOURCE_GROUP = 'inzynierka'
         ACI_NAME = 'onelineshop-container'
-        ACI_REGION = 'eastus'
+        ACI_REGION = 'eastus2'
         MYSQL_SERVER = 'onlineshop-mysql'
     }
 
@@ -131,8 +131,7 @@ pipeline {
                         --sku-name Standard_B1ms \
                         --storage-size 20 \
                         --version 8.0 \
-                        --public-access 0.0.0.0 \
-                        --workload-type Dev
+                        --public-access 0.0.0.0
 
                     echo "Waiting for MySQL server to be ready..."
                     sleep 60
