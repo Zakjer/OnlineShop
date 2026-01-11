@@ -125,9 +125,9 @@ pipeline {
                     az mysql flexible-server create \
                     --resource-group $RESOURCE_GROUP \
                     --location $ACI_REGION \
-                    --name $MYSQL_SERVER \
-                    --admin-user $MYSQL_ADMIN \
-                    --admin-password $MYSQL_PASSWORD \
+                    --name $DB_NAME \
+                    --admin-user $DB_USER \
+                    --admin-password $DB_PASSWORD \
                     --yes
 
                     echo "Waiting for MySQL server to be ready..."
