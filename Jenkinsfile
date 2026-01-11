@@ -128,7 +128,7 @@ pipeline {
                         --location $ACI_REGION \
                         --admin-user $DB_USER \
                         --admin-password $DB_PASSWORD \
-                        --sku-name B_Gen5_1 \   # cheap Dev/Test SKU
+                        --sku-name B_Gen5_1 \
                         --version 8.0 \
                         --storage-size 20 \
                         --public-network-access Enabled
