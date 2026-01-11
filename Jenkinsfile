@@ -132,6 +132,7 @@ pipeline {
                         --storage-size 20 \
                         --version 8.0 \
                         --public-access 0.0.0.0
+                        --workload-type Dev
 
                     echo "Waiting for MySQL server to be ready..."
                     sleep 60
