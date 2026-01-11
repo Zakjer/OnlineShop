@@ -13,7 +13,7 @@ pipeline {
         ACR_SERVER = "${ACR_NAME}.azurecr.io"
         RESOURCE_GROUP = 'inzynierka'
         ACI_NAME = 'onelineshop-container'
-        ACI_REGION = 'westeurope'
+        ACI_REGION = 'eastus'
         MYSQL_SERVER = 'onlineshop-mysql'
     }
 
@@ -129,6 +129,7 @@ pipeline {
                         --admin-user $DB_USER \
                         --admin-password $DB_PASSWORD \
                         --sku-name Standard_B1ms \
+                        --tier Burstable \
                         --storage-size 20 \
                         --version 8.0 \
                         --public-access 0.0.0.0
