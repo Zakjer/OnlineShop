@@ -113,7 +113,7 @@ pipeline {
 
         stage('Create Azure MySQL') {
             steps {
-                sh '''
+                sh """
                 set -e
 
                 echo "Checking MySQL server..."
@@ -125,7 +125,7 @@ pipeline {
                     az mysql flexible-server create \
                     --resource-group $RESOURCE_GROUP \
                     --location $ACI_REGION \
-                    --name $DB_NAME \
+                    --name $MYSQL_SERVER_NAME \
                     --admin-user $DB_USER \
                     --admin-password $DB_PASSWORD \
                     --yes
@@ -141,7 +141,7 @@ pipeline {
                     --resource-group $RESOURCE_GROUP \
                     --server-name $MYSQL_SERVER \
                     --name $DB_NAME || echo "Database already exists"
-                '''
+                """
             }
         }
 
