@@ -14,6 +14,7 @@ pipeline {
         RESOURCE_GROUP = 'inzynierka'
         ACI_NAME = 'onelineshop-container'
         ACI_REGION = 'eastus'
+        MYSQL_SERVER = 'onlineshop-mysql'
     }
 
     stages {
