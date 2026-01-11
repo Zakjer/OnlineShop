@@ -125,7 +125,7 @@ pipeline {
                     az mysql flexible-server create \
                     --resource-group $RESOURCE_GROUP \
                     --location $ACI_REGION \
-                    --name $MYSQL_SERVER_NAME \
+                    --name $MYSQL_SERVER \
                     --admin-user $DB_USER \
                     --admin-password $DB_PASSWORD \
                     --yes
