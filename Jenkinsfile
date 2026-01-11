@@ -116,23 +116,22 @@ pipeline {
                 sh '''
                 set -e
 
-                echo "Checking MySQL server..."
-                if ! az mysql flexible-server show \
+                echo "Checking MySQL Single Server..."
+                if ! az mysql server show \
                     --resource-group $RESOURCE_GROUP \
                     --name $MYSQL_SERVER &>/dev/null; then
 
-                    echo "Creating MySQL Flexible Server..."
-                    az mysql flexible-server create \
+                    echo "Creating MySQL Single Server..."
+                    az mysql server create \
                         --resource-group $RESOURCE_GROUP \
                         --name $MYSQL_SERVER \
                         --location $ACI_REGION \
                         --admin-user $DB_USER \
                         --admin-password $DB_PASSWORD \
-                        --sku-name Standard_B1ms \
-                        --tier Burstable \
-                        --storage-size 20 \
+                        --sku-name B_Gen5_1 \   # cheap Dev/Test SKU
                         --version 8.0 \
-                        --public-access 0.0.0.0
+                        --storage-size 20 \
+                        --public-network-access Enabled
 
                     echo "Waiting for MySQL server to be ready..."
                     sleep 60
@@ -141,7 +140,7 @@ pipeline {
                 fi
 
                 echo "Creating database if not exists..."
-                az mysql flexible-server db create \
+                az mysql db create \
                     --resource-group $RESOURCE_GROUP \
                     --server-name $MYSQL_SERVER \
                     --name $DB_NAME || echo "Database already exists"
