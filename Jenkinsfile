@@ -55,7 +55,7 @@ pipeline {
             }
         }
 
-        stage('Azure authentication and configuration') {
+        stage('Azure authentication') {
             steps {
                 withCredentials([
                     string(credentialsId: 'azure-client-id', variable: 'CLIENT_ID'),
@@ -66,59 +66,32 @@ pipeline {
                     sh '''
                         set -e
 
-                        echo "Logging into Azure..."
                         az login --service-principal \
-                            --username "$CLIENT_ID" \
-                            --password "$CLIENT_SECRET" \
-                            --tenant "$TENANT_ID"
+                        --username "$CLIENT_ID" \
+                        --password "$CLIENT_SECRET" \
+                        --tenant "$TENANT_ID"
 
                         az account set --subscription "$SUBSCRIPTION_ID"
 
-                        echo "Ensuring Azure providers are registered..."
+                        check_and_register () {
+                        PROVIDER=$1
+                        STATE=$(az provider show \
+                            --namespace "$PROVIDER" \
+                            --query "registrationState" \
+                            -o tsv)
 
-                        PROVIDERS=(
-                            "Microsoft.ContainerRegistry"
-                            "Microsoft.ContainerInstance"
-                            "Microsoft.DBforMySQL"
-                        )
+                        echo "$PROVIDER state: $STATE"
 
-                        for PROVIDER in "${PROVIDERS[@]}"; do
-                            STATE=$(az provider show \
-                                --namespace $PROVIDER \
-                                --query "registrationState" \
-                                -o tsv || echo "NotRegistered")
+                        if [ "$STATE" != "Registered" ]; then
+                            echo "Registering $PROVIDER..."
+                            az provider register --namespace "$PROVIDER"
+                            sleep 60
+                        fi
+                        }
 
-                            echo "$PROVIDER state: $STATE"
-
-                            if [ "$STATE" != "Registered" ]; then
-                                echo "Registering $PROVIDER..."
-                                az provider register --namespace $PROVIDER
-                            fi
-                        done
-
-                        echo "Waiting for providers to finish registering..."
-                        for i in {1..12}; do
-                            ALL_REGISTERED=true
-
-                            for PROVIDER in "${PROVIDERS[@]}"; do
-                                STATE=$(az provider show \
-                                    --namespace $PROVIDER \
-                                    --query "registrationState" \
-                                    -o tsv)
-
-                                if [ "$STATE" != "Registered" ]; then
-                                    ALL_REGISTERED=false
-                                    echo "$PROVIDER still registering..."
-                                fi
-                            done
-
-                            if [ "$ALL_REGISTERED" = true ]; then
-                                echo "All providers registered"
-                                break
-                            fi
-
-                            sleep 10
-                        done
+                        check_and_register Microsoft.ContainerRegistry
+                        check_and_register Microsoft.ContainerInstance
+                        check_and_register Microsoft.DBforMySQL
                     '''
                 }
             }
