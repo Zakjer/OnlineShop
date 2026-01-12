@@ -228,7 +228,7 @@ EOF
                     echo "Running Django migrations inside the container..."
                     az container exec \
                         --resource-group $RESOURCE_GROUP \
-                        --name $ACI_GROUP_NAME \
+                        --name onlineshop-group \
                         --container-name django \
                         --exec-command "python manage.py migrate"
                 '''
