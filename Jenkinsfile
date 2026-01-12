@@ -124,7 +124,7 @@ pipeline {
                     echo "Creating MySQL Flexible Server..."
                     az mysql flexible-server create \
                     --resource-group $RESOURCE_GROUP \
-                    --location $westeurope \
+                    --location westeurope \
                     --name $MYSQL_SERVER \
                     --admin-user $DB_USER \
                     --admin-password $DB_PASSWORD \
