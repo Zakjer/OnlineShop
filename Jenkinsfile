@@ -117,6 +117,27 @@ pipeline {
                     sh '''
                     set -e
 
+                    STORAGE_ACCOUNT=onlineshopstorage
+                    STORAGE_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP --account-name $STORAGE_ACCOUNT --query '[0].value' -o tsv || true)
+
+                    if [ -z "$STORAGE_KEY" ]; then
+                        echo "Creating storage account $STORAGE_ACCOUNT..."
+                        az storage account create \
+                            --name $STORAGE_ACCOUNT \
+                            --resource-group $RESOURCE_GROUP \
+                            --location $ACI_REGION \
+                            --sku Standard_LRS
+
+                        STORAGE_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP --account-name $STORAGE_ACCOUNT --query '[0].value' -o tsv)
+                    fi
+
+                    # Create file share if it doesn't exist
+                    FILE_SHARE_NAME=mysql-data
+                    if ! az storage share exists --account-name $STORAGE_ACCOUNT --name $FILE_SHARE_NAME -o tsv | grep -q true; then
+                        echo "Creating file share $FILE_SHARE_NAME..."
+                        az storage share create --account-name $STORAGE_ACCOUNT --account-key $STORAGE_KEY --name $FILE_SHARE_NAME
+                    fi
+
                     # Names
                     ACI_GROUP_NAME=onlineshop-group
                     MYSQL_ACI_NAME=mysql
@@ -129,10 +150,6 @@ pipeline {
                         az container delete --resource-group $RESOURCE_GROUP --name $ACI_GROUP_NAME --yes
                         sleep 10
                     fi
-
-                    # Create Azure File Share for persistence & init SQL
-                    STORAGE_ACCOUNT=$(az storage account list --resource-group $RESOURCE_GROUP --query '[0].name' -o tsv)
-                    STORAGE_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP --account-name $STORAGE_ACCOUNT --query '[0].value' -o tsv)
 
                     # Upload data.sql to file share
                     az storage file upload \
@@ -194,19 +211,6 @@ pipeline {
                     # Get app URL
                     APP_URL=$(az container show --resource-group $RESOURCE_GROUP --name $ACI_GROUP_NAME --query ipAddress.fqdn -o tsv):9000
                     echo "Application URL: http://$APP_URL"
-                    '''
-                }
-            }
-        }
-
-
-
-        stage('Load demo data into Azure MySQL') {
-            steps {
-                withCredentials([string(credentialsId: 'db-password', variable: 'DB_PASSWORD')]) {
-                    sh '''
-                    echo "Loading demo data..."
-                    mysql -h $DB_HOST -u $DB_USER -p$DB_PASSWORD $DB_NAME < data.sql
                     '''
                 }
             }
