@@ -103,109 +103,128 @@ pipeline {
         }
 
         stage('Deploy App + MySQL to ACI') {
-            steps {
-                withCredentials([string(credentialsId: 'db-password', variable: 'DB_PASSWORD')]) {
-                    sh '''
-                    set -e
+    steps {
+        withCredentials([
+            string(credentialsId: 'db-password', variable: 'DB_PASSWORD'),
+            string(credentialsId: 'secret-key', variable: 'SECRET_KEY')
+        ]) {
+            sh '''
+            set -e
 
-                    STORAGE_ACCOUNT="onlineshop$(date +%s | tail -c 6)"
-                    STORAGE_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP --account-name $STORAGE_ACCOUNT --query '[0].value' -o tsv || true)
+            ACI_GROUP_NAME=onlineshop-group
+            FILE_SHARE_NAME=mysql-data
+            STORAGE_ACCOUNT=onlineshop$(date +%s | tail -c 6)
 
-                    if [ -z "$STORAGE_KEY" ]; then
-                        echo "Creating storage account $STORAGE_ACCOUNT..."
-                        az storage account create \
-                            --name $STORAGE_ACCOUNT \
-                            --resource-group $RESOURCE_GROUP \
-                            --location $ACI_REGION \
-                            --sku Standard_LRS
+            echo "Creating storage account: $STORAGE_ACCOUNT"
+            az storage account create \
+                --name $STORAGE_ACCOUNT \
+                --resource-group $RESOURCE_GROUP \
+                --location $ACI_REGION \
+                --sku Standard_LRS
 
-                        STORAGE_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP --account-name $STORAGE_ACCOUNT --query '[0].value' -o tsv)
-                    fi
+            STORAGE_KEY=$(az storage account keys list \
+                --resource-group $RESOURCE_GROUP \
+                --account-name $STORAGE_ACCOUNT \
+                --query '[0].value' -o tsv)
 
-                    # Create file share if it doesn't exist
-                    FILE_SHARE_NAME=mysql-data
-                    if ! az storage share exists --account-name $STORAGE_ACCOUNT --name $FILE_SHARE_NAME -o tsv | grep -q true; then
-                        echo "Creating file share $FILE_SHARE_NAME..."
-                        az storage share create --account-name $STORAGE_ACCOUNT --account-key $STORAGE_KEY --name $FILE_SHARE_NAME
-                    fi
+            echo "Creating file share"
+            az storage share create \
+                --account-name $STORAGE_ACCOUNT \
+                --account-key $STORAGE_KEY \
+                --name $FILE_SHARE_NAME
 
-                    # Names
-                    ACI_GROUP_NAME=onlineshop-group
-                    MYSQL_ACI_NAME=mysql
-                    APP_ACI_NAME=app
-                    FILE_SHARE_NAME=mysql-data
+            echo "Uploading data.sql"
+            az storage file upload \
+                --account-name $STORAGE_ACCOUNT \
+                --account-key $STORAGE_KEY \
+                --share-name $FILE_SHARE_NAME \
+                --source data.sql \
+                --path data.sql
 
-                    # Check if container group exists
-                    if az container show --resource-group $RESOURCE_GROUP --name $ACI_GROUP_NAME &>/dev/null; then
-                        echo "Deleting existing ACI group..."
-                        az container delete --resource-group $RESOURCE_GROUP --name $ACI_GROUP_NAME --yes
-                        sleep 10
-                    fi
+            echo "Deleting existing ACI group (if any)"
+            az container delete \
+                --resource-group $RESOURCE_GROUP \
+                --name $ACI_GROUP_NAME \
+                --yes || true
+            sleep 10
 
+            echo "Generating aci-group.yaml"
+            cat > aci-group.yaml <<EOF
+apiVersion: 2021-09-01
+location: ${ACI_REGION}
+name: ${ACI_GROUP_NAME}
+properties:
+  osType: Linux
+  restartPolicy: Always
+  containers:
+    - name: mysql
+      properties:
+        image: mysql:8.0
+        resources:
+          requests:
+            cpu: 1
+            memoryInGB: 1.5
+        environmentVariables:
+          - name: MYSQL_ROOT_PASSWORD
+            value: ${DB_PASSWORD}
+          - name: MYSQL_DATABASE
+            value: ${DB_NAME}
+        volumeMounts:
+          - name: mysql-volume
+            mountPath: /docker-entrypoint-initdb.d
 
-                    # Upload data.sql to file share
-                    az storage file upload \
-                        --account-name $STORAGE_ACCOUNT \
-                        --account-key $STORAGE_KEY \
-                        --share-name $FILE_SHARE_NAME \
-                        --source data.sql \
-                        --path data.sql
+    - name: django
+      properties:
+        image: ${ACR_SERVER}/${IMAGE_NAME}:${IMAGE_TAG}
+        ports:
+          - port: 9000
+        resources:
+          requests:
+            cpu: 1
+            memoryInGB: 2
+        environmentVariables:
+          - name: DB_HOST
+            value: 127.0.0.1
+          - name: DB_PORT
+            value: "3306"
+          - name: DB_NAME
+            value: ${DB_NAME}
+          - name: DB_USER
+            value: root
+          - name: DB_PASSWORD
+            value: ${DB_PASSWORD}
+          - name: SECRET_KEY
+            value: ${SECRET_KEY}
 
-                    # Deploy ACI group with two containers
-                    az container create \
-                        --resource-group $RESOURCE_GROUP \
-                        --name $ACI_GROUP_NAME \
-                        --location $ACI_REGION \
-                        --dns-name-label online-shop-${BUILD_NUMBER} \
-                        --os-type Linux \
-                        --cpu 2 \
-                        --memory 3.5 \
-                        --restart-policy Always \
-                        --ports 9000 \
-                        --containers "[
-                            {
-                                \"name\": \"$MYSQL_ACI_NAME\",
-                                \"image\": \"mysql:8.0\",
-                                \"ports\": [{\"port\": 3306}],
-                                \"environmentVariables\": [
-                                    {\"name\": \"MYSQL_ROOT_PASSWORD\", \"value\": \"$DB_PASSWORD\"},
-                                    {\"name\": \"MYSQL_DATABASE\", \"value\": \"$DB_NAME\"}
-                                ],
-                                \"volumeMounts\": [
-                                    {
-                                        \"name\": \"mysql-volume\",
-                                        \"mountPath\": \"/docker-entrypoint-initdb.d\"
-                                    }
-                                ]
-                            },
-                            {
-                                \"name\": \"$APP_ACI_NAME\",
-                                \"image\": \"$ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG\",
-                                \"ports\": [{\"port\": 9000}],
-                                \"environmentVariables\": [
-                                    {\"name\": \"DB_HOST\", \"value\": \"127.0.0.1\"},
-                                    {\"name\": \"DB_PORT\", \"value\": \"3306\"},
-                                    {\"name\": \"DB_NAME\", \"value\": \"$DB_NAME\"},
-                                    {\"name\": \"DB_USER\", \"value\": \"root\"},
-                                    {\"name\": \"DB_PASSWORD\", \"value\": \"$DB_PASSWORD\"}
-                                ]
-                            }
-                        ]" \
-                        --azure-file-volume-account-name $STORAGE_ACCOUNT \
-                        --azure-file-volume-account-key $STORAGE_KEY \
-                        --azure-file-volume-share-name $FILE_SHARE_NAME \
-                        --azure-file-volume-mount-path /docker-entrypoint-initdb.d \
-                        --query "{FQDN:ipAddress.fqdn}" -o tsv
+  ipAddress:
+    type: Public
+    ports:
+      - protocol: tcp
+        port: 9000
 
-                    echo "Waiting 40s for MySQL to initialize..."
-                    sleep 40
+  volumes:
+    - name: mysql-volume
+      azureFile:
+        shareName: ${FILE_SHARE_NAME}
+        storageAccountName: ${STORAGE_ACCOUNT}
+        storageAccountKey: ${STORAGE_KEY}
+EOF
 
-                    # Get app URL
-                    APP_URL=$(az container show --resource-group $RESOURCE_GROUP --name $ACI_GROUP_NAME --query ipAddress.fqdn -o tsv):9000
-                    echo "Application URL: http://$APP_URL"
-                    '''
-                }
-            }
+            echo "Deploying ACI group"
+            az container create \
+                --resource-group $RESOURCE_GROUP \
+                --file aci-group.yaml
+
+            APP_URL=$(az container show \
+                --resource-group $RESOURCE_GROUP \
+                --name $ACI_GROUP_NAME \
+                --query ipAddress.fqdn -o tsv)
+
+            echo "Application URL: http://$APP_URL:9000"
+            '''
         }
+    }
+}
+
     }
 }
