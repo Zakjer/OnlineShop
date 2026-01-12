@@ -178,7 +178,7 @@ properties:
             value: ${DB_NAME}
         volumeMounts:
           - name: mysql-volume
-            mountPath: /docker-entrypoint-initdb.d
+            mountPath: /var/lib/mysql
 
     - name: django
       properties:
