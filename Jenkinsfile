@@ -222,12 +222,12 @@ EOF
                 --resource-group $RESOURCE_GROUP \
                 --file aci-group.yaml
 
-            APP_URL=$(az container show \
+            APP_IP=$(az container show \
                 --resource-group $RESOURCE_GROUP \
                 --name $ACI_GROUP_NAME \
-                --query ipAddress.fqdn -o tsv)
+                --query ipAddress.ip -o tsv)
 
-            echo "Application URL: http://$APP_URL:9000"
+            echo "Application URL: http://$APP_IP:9000"
             '''
         }
     }
