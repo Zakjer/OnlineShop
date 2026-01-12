@@ -18,4 +18,4 @@ RUN python manage.py collectstatic --noinput
 
 EXPOSE 9000
 
-CMD ["gunicorn", "OnlineShop.wsgi:application", "--bind", "0.0.0.0:9000"]
+CMD ["gunicorn", "OnlineShop.wsgi:application", "--bind", "0.0.0.0:9000", "--timeout", "120"] 
