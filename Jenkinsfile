@@ -133,13 +133,6 @@ pipeline {
                 --account-key $STORAGE_KEY \
                 --name $FILE_SHARE_NAME
 
-            echo "Uploading data.sql"
-            az storage file upload \
-                --account-name $STORAGE_ACCOUNT \
-                --account-key $STORAGE_KEY \
-                --share-name $FILE_SHARE_NAME \
-                --source data.sql \
-                --path data.sql
 
             echo "Deleting existing ACI group (if any)"
             az container delete \
@@ -176,9 +169,6 @@ properties:
             value: ${DB_PASSWORD}
           - name: MYSQL_DATABASE
             value: ${DB_NAME}
-        volumeMounts:
-          - name: mysql-volume
-            mountPath: /var/lib/mysql
 
     - name: django
       properties:
@@ -191,7 +181,7 @@ properties:
             memoryInGB: 2
         environmentVariables:
           - name: DB_HOST
-            value: 127.0.0.1
+            value: mysql
           - name: DB_PORT
             value: "3306"
           - name: DB_NAME
@@ -232,6 +222,18 @@ EOF
         }
     }
 }
+        stage('Run Django migrations') {
+            steps {
+                sh '''
+                    echo "Running Django migrations inside the container..."
+                    az container exec \
+                        --resource-group $RESOURCE_GROUP \
+                        --name $ACI_GROUP_NAME \
+                        --container-name django \
+                        --exec-command "python manage.py migrate"
+                '''
+            }
+        }
 
     }
 }
