@@ -148,6 +148,8 @@ pipeline {
                 --yes || true
             sleep 10
 
+            ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query username -o tsv)
+            ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query passwords[0].value -o tsv)
             echo "Generating aci-group.yaml"
             cat > aci-group.yaml <<EOF
 apiVersion: 2021-09-01
@@ -156,6 +158,11 @@ name: ${ACI_GROUP_NAME}
 properties:
   osType: Linux
   restartPolicy: Always
+
+  imageRegistryCredentials:
+    - server: onlineshopacr.azurecr.io
+      username: ${ACR_USERNAME}
+      password: ${ACR_PASSWORD}
   containers:
     - name: mysql
       properties:
