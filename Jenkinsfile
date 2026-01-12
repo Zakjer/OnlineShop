@@ -117,7 +117,7 @@ pipeline {
                     sh '''
                     set -e
 
-                    STORAGE_ACCOUNT=onlineshopstorage$(date +%s)
+                    STORAGE_ACCOUNT=onlineshopdb$(date +%s | tail -c 5)
                     STORAGE_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP --account-name $STORAGE_ACCOUNT --query '[0].value' -o tsv || true)
 
                     if [ -z "$STORAGE_KEY" ]; then
