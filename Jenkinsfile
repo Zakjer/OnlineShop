@@ -151,6 +151,12 @@ pipeline {
                         --registry-login-server $ACR_SERVER \
                         --registry-username $ACR_USERNAME \
                         --registry-password $ACR_PASSWORD \
+                        --environment-variables \
+                            DB_HOST=$MYSQL_SERVER \
+                            DB_USER=$DB_USER \
+                            DB_PASSWORD=$DB_PASSWORD \
+                            DB_NAME=$DB_NAME \
+                            SECRET_KEY=$SECRET_KEY \
                         --azure-file-volume-share-name $FILE_SHARE_NAME \
                         --azure-file-volume-account-name $STORAGE_ACCOUNT \
                         --azure-file-volume-account-key $STORAGE_KEY \
