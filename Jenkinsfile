@@ -111,83 +111,95 @@ pipeline {
             }
         }
 
-        stage('Create Azure MySQL') {
+        stage('Deploy App + MySQL to ACI') {
             steps {
-                sh """
-                set -e
+                withCredentials([string(credentialsId: 'db-password', variable: 'DB_PASSWORD')]) {
+                    sh '''
+                    set -e
 
-                echo "Checking MySQL server..."
-                if ! az mysql flexible-server show \
-                    --resource-group $RESOURCE_GROUP \
-                    --name $MYSQL_SERVER &>/dev/null; then
+                    # Names
+                    ACI_GROUP_NAME=onlineshop-group
+                    MYSQL_ACI_NAME=mysql
+                    APP_ACI_NAME=app
+                    FILE_SHARE_NAME=mysql-data
 
-                    echo "Creating MySQL Flexible Server..."
-                    az mysql flexible-server create \
-                    --resource-group $RESOURCE_GROUP \
-                    --location westeurope \
-                    --name $MYSQL_SERVER \
-                    --admin-user $DB_USER \
-                    --admin-password $DB_PASSWORD \
-                    --sku-name Standard_B1ms \
-                    --tier Burstable \
-                    --yes
+                    # Check if container group exists
+                    if az container show --resource-group $RESOURCE_GROUP --name $ACI_GROUP_NAME &>/dev/null; then
+                        echo "Deleting existing ACI group..."
+                        az container delete --resource-group $RESOURCE_GROUP --name $ACI_GROUP_NAME --yes
+                        sleep 10
+                    fi
 
-                    echo "Waiting for MySQL server to be ready..."
-                    sleep 60
-                else
-                    echo "MySQL server already exists"
-                fi
+                    # Create Azure File Share for persistence & init SQL
+                    STORAGE_ACCOUNT=$(az storage account list --resource-group $RESOURCE_GROUP --query '[0].name' -o tsv)
+                    STORAGE_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP --account-name $STORAGE_ACCOUNT --query '[0].value' -o tsv)
 
-                echo "Creating database if not exists..."
-                az mysql flexible-server db create \
-                    --resource-group $RESOURCE_GROUP \
-                    --server-name $MYSQL_SERVER \
-                    --name $DB_NAME || echo "Database already exists"
-                """
+                    # Upload data.sql to file share
+                    az storage file upload \
+                        --account-name $STORAGE_ACCOUNT \
+                        --account-key $STORAGE_KEY \
+                        --share-name $FILE_SHARE_NAME \
+                        --source data.sql \
+                        --path data.sql
+
+                    # Deploy ACI group with two containers
+                    az container create \
+                        --resource-group $RESOURCE_GROUP \
+                        --name $ACI_GROUP_NAME \
+                        --location $ACI_REGION \
+                        --dns-name-label online-shop-${BUILD_NUMBER} \
+                        --os-type Linux \
+                        --cpu 2 \
+                        --memory 3.5 \
+                        --restart-policy Always \
+                        --ports 9000 \
+                        --containers "[
+                            {
+                                \"name\": \"$MYSQL_ACI_NAME\",
+                                \"image\": \"mysql:8.0\",
+                                \"ports\": [{\"port\": 3306}],
+                                \"environmentVariables\": [
+                                    {\"name\": \"MYSQL_ROOT_PASSWORD\", \"value\": \"$DB_PASSWORD\"},
+                                    {\"name\": \"MYSQL_DATABASE\", \"value\": \"$DB_NAME\"}
+                                ],
+                                \"volumeMounts\": [
+                                    {
+                                        \"name\": \"mysql-volume\",
+                                        \"mountPath\": \"/docker-entrypoint-initdb.d\"
+                                    }
+                                ]
+                            },
+                            {
+                                \"name\": \"$APP_ACI_NAME\",
+                                \"image\": \"$ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG\",
+                                \"ports\": [{\"port\": 9000}],
+                                \"environmentVariables\": [
+                                    {\"name\": \"DB_HOST\", \"value\": \"127.0.0.1\"},
+                                    {\"name\": \"DB_PORT\", \"value\": \"3306\"},
+                                    {\"name\": \"DB_NAME\", \"value\": \"$DB_NAME\"},
+                                    {\"name\": \"DB_USER\", \"value\": \"root\"},
+                                    {\"name\": \"DB_PASSWORD\", \"value\": \"$DB_PASSWORD\"}
+                                ]
+                            }
+                        ]" \
+                        --azure-file-volume-account-name $STORAGE_ACCOUNT \
+                        --azure-file-volume-account-key $STORAGE_KEY \
+                        --azure-file-volume-share-name $FILE_SHARE_NAME \
+                        --azure-file-volume-mount-path /docker-entrypoint-initdb.d \
+                        --query "{FQDN:ipAddress.fqdn}" -o tsv
+
+                    echo "Waiting 40s for MySQL to initialize..."
+                    sleep 40
+
+                    # Get app URL
+                    APP_URL=$(az container show --resource-group $RESOURCE_GROUP --name $ACI_GROUP_NAME --query ipAddress.fqdn -o tsv):9000
+                    echo "Application URL: http://$APP_URL"
+                    '''
+                }
             }
         }
 
-        stage('Deploy app to Azure Container Instance') {
-            steps {
-			sh '''
-                echo "Checking if ACI $ACI_NAME exists..."
-                if az container show --resource-group $RESOURCE_GROUP --name $ACI_NAME &>/dev/null; then
-                    echo "Deleting existing ACI container..."
-                    az container delete --resource-group $RESOURCE_GROUP --name $ACI_NAME --yes
-                    echo "Waiting for deletion..."
-                    sleep 10
-                fi
 
-				echo 'Deploying Image to ACI'
-				az container create \
-                    --name $ACI_NAME \
-                    --resource-group $RESOURCE_GROUP \
-                    --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG \
-                    --registry-login-server $ACR_SERVER \
-                    --registry-username $(az acr credential show --name $ACR_NAME --query username -o tsv) \
-                    --registry-password $(az acr credential show --name $ACR_NAME --query passwords[0].value -o tsv) \
-                    --dns-name-label online-shop-${BUILD_NUMBER} \
-                    --ports 9000 \
-                    --location $ACI_REGION \
-                    --os-type Linux \
-                    --cpu 1 \
-                    --memory 1.5 \
-                    --restart-policy Never
-
-                echo "Waiting for ACI to initialize..."
-                sleep 30
-
-                echo "Getting the URL of the ACI app..."
-                APP_URL=$(az container show \
-                    --resource-group $RESOURCE_GROUP \
-                    --name $ACI_NAME \
-                    --query ipAddress.fqdn \
-                    --output tsv):9000
-
-                echo "Application URL: http://$APP_URL"
-    			'''
-			}
-		}
 
         stage('Load demo data into Azure MySQL') {
             steps {
