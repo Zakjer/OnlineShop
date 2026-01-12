@@ -112,66 +112,111 @@ pipeline {
         }
 
         stage('Deploy App + MySQL to ACI') {
-            steps {
-                withCredentials([string(credentialsId: 'db-password', variable: 'DB_PASSWORD')]) {
-                    sh '''
-                    set -e
+            stage('Deploy App + MySQL to ACI') {
+    steps {
+        withCredentials([
+            string(credentialsId: 'db-password', variable: 'DB_PASSWORD'),
+            string(credentialsId: 'secret-key', variable: 'SECRET_KEY')
+        ]) {
+            sh '''
+            set -e
 
-                    echo "Fetching ACR credentials..."
-                    ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query username -o tsv)
-                    ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query passwords[0].value -o tsv)
+            echo "Fetching ACR credentials..."
+            ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query username -o tsv)
+            ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query passwords[0].value -o tsv)
 
-                    echo "Creating storage account for MySQL persistence..."
-                    STORAGE_ACCOUNT=onlineshopdb$(date +%s | tail -c 5)
-                    az storage account create \
-                        --name $STORAGE_ACCOUNT \
-                        --resource-group $RESOURCE_GROUP \
-                        --location $ACI_REGION \
-                        --sku Standard_LRS || true
+            echo "Creating storage account for MySQL persistence..."
+            STORAGE_ACCOUNT=onlineshopdb$(date +%s | tail -c 5)
+            az storage account create \
+                --name $STORAGE_ACCOUNT \
+                --resource-group $RESOURCE_GROUP \
+                --location $ACI_REGION \
+                --sku Standard_LRS || true
 
-                    STORAGE_KEY=$(az storage account keys list \
-                        --resource-group $RESOURCE_GROUP \
-                        --account-name $STORAGE_ACCOUNT \
-                        --query '[0].value' -o tsv)
+            STORAGE_KEY=$(az storage account keys list \
+                --resource-group $RESOURCE_GROUP \
+                --account-name $STORAGE_ACCOUNT \
+                --query '[0].value' -o tsv)
 
-                    echo "Creating Azure File Share..."
-                    FILE_SHARE_NAME=mysql-data
-                    az storage share create \
-                        --account-name $STORAGE_ACCOUNT \
-                        --account-key $STORAGE_KEY \
-                        --name $FILE_SHARE_NAME || true
+            echo "Creating Azure File Share..."
+            FILE_SHARE_NAME=mysql-data
+            az storage share create \
+                --account-name $STORAGE_ACCOUNT \
+                --account-key $STORAGE_KEY \
+                --name $FILE_SHARE_NAME || true
 
-                    echo "Uploading data.sql to File Share..."
-                    az storage file upload \
-                        --account-name $STORAGE_ACCOUNT \
-                        --account-key $STORAGE_KEY \
-                        --share-name $FILE_SHARE_NAME \
-                        --source data.sql \
-                        --path data.sql
+            echo "Uploading data.sql to File Share..."
+            az storage file upload \
+                --account-name $STORAGE_ACCOUNT \
+                --account-key $STORAGE_KEY \
+                --share-name $FILE_SHARE_NAME \
+                --source data.sql \
+                --path data.sql
 
-                    echo "Deleting existing container group if exists..."
-                    az container delete \
-                        --resource-group $RESOURCE_GROUP \
-                        --name onlineshop-group \
-                        --yes || true
-                    sleep 10
+            echo "Deleting existing container group if exists..."
+            az container delete \
+                --resource-group $RESOURCE_GROUP \
+                --name onlineshop-group \
+                --yes || true
+            sleep 10
 
-                    echo "Deploying multi-container group from YAML..."
-                    az container create \
-                        --resource-group $RESOURCE_GROUP \
-                        --file aci-group.yaml
+            echo "Generating aci-group.yaml dynamically..."
+            cat > aci-group.yaml <<EOF
+apiVersion: '2021-07-01'
+location: ${ACI_REGION}
+name: onlineshop-group
+properties:
+  containers:
+    - name: django
+      properties:
+        image: ${ACR_SERVER}/${IMAGE_NAME}:${IMAGE_TAG}
+        ports:
+          - port: 9000
+        environmentVariables:
+          - name: DB_HOST
+            value: 127.0.0.1
+          - name: DB_USER
+            value: root
+          - name: DB_PASSWORD
+            value: ${DB_PASSWORD}
+          - name: DB_NAME
+            value: ${DB_NAME}
+          - name: SECRET_KEY
+            value: ${SECRET_KEY}
+    - name: mysql
+      properties:
+        image: mysql:8.0
+        environmentVariables:
+          - name: MYSQL_ROOT_PASSWORD
+            value: ${DB_PASSWORD}
+          - name: MYSQL_DATABASE
+            value: ${DB_NAME}
+        volumeMounts:
+          - name: mysql-volume
+            mountPath: /docker-entrypoint-initdb.d
+  osType: Linux
+  volumes:
+    - name: mysql-volume
+      azureFile:
+        shareName: ${FILE_SHARE_NAME}
+        storageAccountName: ${STORAGE_ACCOUNT}
+        storageAccountKey: ${STORAGE_KEY}
+EOF
 
-                    echo "Fetching app URL..."
-                    APP_URL=$(az container show \
-                        --resource-group $RESOURCE_GROUP \
-                        --name onlineshop-group \
-                        --query ipAddress.fqdn -o tsv):9000
+            echo "Deploying multi-container ACI from YAML..."
+            az container create --resource-group $RESOURCE_GROUP --file aci-group.yaml
 
-                    echo "Application URL: http://$APP_URL"
-                    '''
-                }
-            }
+            echo "Fetching app URL..."
+            APP_URL=$(az container show \
+                --resource-group $RESOURCE_GROUP \
+                --name onlineshop-group \
+                --query ipAddress.fqdn -o tsv):9000
+            echo "Application URL: http://$APP_URL"
+            '''
         }
+    }
+}
+
 
     }
 }
