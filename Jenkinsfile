@@ -117,20 +117,31 @@ pipeline {
                     sh '''
                     set -e
 
-                    # Fetch ACR credentials
+                    echo "Fetching ACR credentials..."
                     ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query username -o tsv)
                     ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query passwords[0].value -o tsv)
 
-                    # Storage account for MySQL persistence
+                    echo "Creating storage account for MySQL persistence..."
                     STORAGE_ACCOUNT=onlineshopdb$(date +%s | tail -c 5)
-                    az storage account create --name $STORAGE_ACCOUNT --resource-group $RESOURCE_GROUP --location $ACI_REGION --sku Standard_LRS || true
-                    STORAGE_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP --account-name $STORAGE_ACCOUNT --query '[0].value' -o tsv)
+                    az storage account create \
+                        --name $STORAGE_ACCOUNT \
+                        --resource-group $RESOURCE_GROUP \
+                        --location $ACI_REGION \
+                        --sku Standard_LRS || true
 
-                    # Create file share for MySQL
+                    STORAGE_KEY=$(az storage account keys list \
+                        --resource-group $RESOURCE_GROUP \
+                        --account-name $STORAGE_ACCOUNT \
+                        --query '[0].value' -o tsv)
+
+                    echo "Creating Azure File Share..."
                     FILE_SHARE_NAME=mysql-data
-                    az storage share create --account-name $STORAGE_ACCOUNT --account-key $STORAGE_KEY --name $FILE_SHARE_NAME || true
+                    az storage share create \
+                        --account-name $STORAGE_ACCOUNT \
+                        --account-key $STORAGE_KEY \
+                        --name $FILE_SHARE_NAME || true
 
-                    # Upload data.sql to the file share
+                    echo "Uploading data.sql to File Share..."
                     az storage file upload \
                         --account-name $STORAGE_ACCOUNT \
                         --account-key $STORAGE_KEY \
@@ -138,19 +149,29 @@ pipeline {
                         --source data.sql \
                         --path data.sql
 
-                    # Delete existing ACI group if it exists
-                    az container delete --resource-group $RESOURCE_GROUP --name onlineshop-group --yes || true
+                    echo "Deleting existing container group if exists..."
+                    az container delete \
+                        --resource-group $RESOURCE_GROUP \
+                        --name onlineshop-group \
+                        --yes || true
                     sleep 10
 
-                    # Deploy the multi-container group from your prepared YAML
-                    az container create --resource-group $RESOURCE_GROUP --file aci-group.yaml
+                    echo "Deploying multi-container group from YAML..."
+                    az container create \
+                        --resource-group $RESOURCE_GROUP \
+                        --file aci-group.yaml
 
-                    # Get app URL from the deployed ACI
-                    APP_URL=$(az container show --resource-group $RESOURCE_GROUP --name onlineshop-group --query ipAddress.fqdn -o tsv):9000
+                    echo "Fetching app URL..."
+                    APP_URL=$(az container show \
+                        --resource-group $RESOURCE_GROUP \
+                        --name onlineshop-group \
+                        --query ipAddress.fqdn -o tsv):9000
+
                     echo "Application URL: http://$APP_URL"
                     '''
                 }
             }
         }
+
     }
 }
