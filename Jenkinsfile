@@ -181,7 +181,7 @@ properties:
             memoryInGB: 2
         environmentVariables:
           - name: DB_HOST
-            value: mysql
+            value: 127.0.0.1
           - name: DB_PORT
             value: "3306"
           - name: DB_NAME
@@ -237,7 +237,7 @@ EOF
                         --resource-group $RESOURCE_GROUP \
                         --name onlineshop-group \
                         --container-name django \
-                        --exec-command "DB_HOST=$MYSQL_IP python manage.py migrate"
+                        --exec-command "python manage.py migrate"
                 '''
             }
         }
