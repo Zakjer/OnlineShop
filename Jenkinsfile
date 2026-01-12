@@ -121,43 +121,62 @@ pipeline {
                     ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query username -o tsv)
                     ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query passwords[0].value -o tsv)
 
-                    # Delete existing container group if exists
+                    # Storage account for MySQL persistence
+                    STORAGE_ACCOUNT=onlineshopdb$(date +%s | tail -c 5)
+                    az storage account create --name $STORAGE_ACCOUNT --resource-group $RESOURCE_GROUP --location $ACI_REGION --sku Standard_LRS || true
+                    STORAGE_KEY=$(az storage account keys list --resource-group $RESOURCE_GROUP --account-name $STORAGE_ACCOUNT --query '[0].value' -o tsv)
+
+                    # Create file share for MySQL
+                    FILE_SHARE_NAME=mysql-data
+                    az storage share create --account-name $STORAGE_ACCOUNT --account-key $STORAGE_KEY --name $FILE_SHARE_NAME || true
+
+                    # Delete existing ACI group if exists
                     az container delete --resource-group $RESOURCE_GROUP --name onlineshop-group --yes || true
                     sleep 10
 
-                    # Deploy multi-container group: Django + MySQL
-                    az container create \
-                        --resource-group $RESOURCE_GROUP \
-                        --name onlineshop-group \
-                        --location $ACI_REGION \
-                        --dns-name-label online-shop-${BUILD_NUMBER} \
-                        --os-type Linux \
-                        --cpu 2 --memory 3.5 \
-                        --ports 9000 \
-                        --restart-policy Always \
-                        --container-name django \
-                        --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG \
-                        --registry-login-server $ACR_SERVER \
-                        --registry-username $ACR_USERNAME \
-                        --registry-password $ACR_PASSWORD \
-                        --environment-variables \
-                            DB_HOST=127.0.0.1 \
-                            DB_USER=$DB_USER \
-                            DB_PASSWORD=$DB_PASSWORD \
-                            DB_NAME=$DB_NAME \
-                            SECRET_KEY=$SECRET_KEY \
-                        --ports 9000 \
-                        --container-name mysql \
-                        --image mysql:8.0 \
-                        --environment-variables \
-                            MYSQL_ROOT_PASSWORD=$DB_PASSWORD \
-                            MYSQL_DATABASE=$DB_NAME \
-                        --azure-file-volume-share-name $FILE_SHARE_NAME \
-                        --azure-file-volume-account-name $STORAGE_ACCOUNT \
-                        --azure-file-volume-account-key $STORAGE_KEY \
-                        --azure-file-volume-mount-path /docker-entrypoint-initdb.d
+                    # Upload data.sql
+                    az storage file upload --account-name $STORAGE_ACCOUNT --account-key $STORAGE_KEY --share-name $FILE_SHARE_NAME --source data.sql --path data.sql
 
-                    # Wait a bit for MySQL to initialize
+                    # Upload data.sql
+                    az storage file upload \
+                    --account-name $STORAGE_ACCOUNT \
+                    --account-key $STORAGE_KEY \
+                    --share-name $FILE_SHARE_NAME \
+                    --source data.sql \
+                    --path data.sql
+
+                    # Deploy Django + MySQL
+                    az container create \
+                    --resource-group $RESOURCE_GROUP \
+                    --name onlineshop-group \
+                    --location $ACI_REGION \
+                    --dns-name-label online-shop-${BUILD_NUMBER} \
+                    --os-type Linux \
+                    --cpu 2 --memory 3.5 \
+                    --restart-policy Always \
+                    --container-name django \
+                    --image $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG \
+                    --registry-login-server $ACR_SERVER \
+                    --registry-username $ACR_USERNAME \
+                    --registry-password $ACR_PASSWORD \
+                    --environment-variables \
+                        DB_HOST=127.0.0.1 \
+                        DB_USER=$DB_USER \
+                        DB_PASSWORD=$DB_PASSWORD \
+                        DB_NAME=$DB_NAME \
+                        SECRET_KEY=$SECRET_KEY \
+                    --ports 9000 \
+                    --container-name mysql \
+                    --image mysql:8.0 \
+                    --environment-variables \
+                        MYSQL_ROOT_PASSWORD=$DB_PASSWORD \
+                        MYSQL_DATABASE=$DB_NAME \
+                    --azure-file-volume-share-name $FILE_SHARE_NAME \
+                    --azure-file-volume-account-name $STORAGE_ACCOUNT \
+                    --azure-file-volume-account-key $STORAGE_KEY \
+                    --azure-file-volume-mount-path /docker-entrypoint-initdb.d
+
+                    # Wait for MySQL
                     sleep 40
 
                     # Get app URL
@@ -167,7 +186,6 @@ pipeline {
                 }
             }
         }
-
 
 
 
