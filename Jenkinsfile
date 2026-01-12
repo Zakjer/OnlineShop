@@ -225,13 +225,19 @@ EOF
         stage('Run Django migrations') {
             steps {
                 sh '''
-                    sleep 60
+                    MYSQL_IP=$(az container show \
+                        --resource-group $RESOURCE_GROUP \
+                        --name onlineshop-group \
+                        --query "containers[?name=='mysql'].instanceView.currentState.network.ipAddress" \
+                        -o tsv)
+
+                        echo $MYSQL_IP
                     echo "Running Django migrations inside the container..."
                     az container exec \
                         --resource-group $RESOURCE_GROUP \
                         --name onlineshop-group \
                         --container-name django \
-                        --exec-command "python manage.py migrate"
+                        --exec-command "DB_HOST=$MYSQL_IP python manage.py migrate"
                 '''
             }
         }
