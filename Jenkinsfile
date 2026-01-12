@@ -124,10 +124,12 @@ pipeline {
                     echo "Creating MySQL Flexible Server..."
                     az mysql flexible-server create \
                     --resource-group $RESOURCE_GROUP \
-                    --location $ACI_REGION \
+                    --location $westeurope \
                     --name $MYSQL_SERVER \
                     --admin-user $DB_USER \
                     --admin-password $DB_PASSWORD \
+                    --sku-name Standard_B1ms \
+                    --tier Burstable \
                     --yes
 
                     echo "Waiting for MySQL server to be ready..."
