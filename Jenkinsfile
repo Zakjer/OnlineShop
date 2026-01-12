@@ -225,6 +225,18 @@ EOF
         stage('Run Django migrations') {
             steps {
                 sh '''
+                    echo "Waiting for MySQL to be ready..."
+                    until az container exec \
+                    --resource-group $RESOURCE_GROUP \
+                    --name onlineshop-group \
+                    --container-name mysql \
+                    --exec-command "mysqladmin ping -uroot -p$DB_PASSWORD" \
+                    | grep -q "mysqld is alive"; do
+                        echo -n "."
+                        sleep 5
+                    done
+                    echo "MySQL is ready, running migrations..."
+
                     echo "Running Django migrations inside the container..."
                     az container exec \
                         --resource-group $RESOURCE_GROUP \
