@@ -166,7 +166,7 @@ properties:
   containers:
     - name: mysql
       properties:
-        image: mysql:8.0
+        image: onlineshopacr.azurecr.io/mysql:8.0
         resources:
           requests:
             cpu: 1
