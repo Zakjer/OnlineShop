@@ -248,13 +248,22 @@ EOF
                     string(credentialsId: 'db-password', variable: 'DB_PASSWORD')
                 ]) {
                     sh '''
-                    echo "Importing SQL dump into MySQL container..."
-
+                    echo "Copying SQL dump into MySQL container..."
                     az container exec \
                     --resource-group $RESOURCE_GROUP \
                     --name onlineshop-group \
                     --container-name mysql \
-                    --exec-command "mysql -u root -p$DB_PASSWORD shop_database" < db_dump.sql
+                    --exec-command "cat > /tmp/db_dump.sql" \
+                    < db_dump.sql
+
+                    echo "Importing SQL dump..."
+                    az container exec \
+                    --resource-group $RESOURCE_GROUP \
+                    --name onlineshop-group \
+                    --container-name mysql \
+                    --exec-command "sh -c 'mysql -u root -p$DB_PASSWORD shop_database < /tmp/db_dump.sql'"
+
+                    echo "Database import finished successfully"
                     '''
                 }
             }
