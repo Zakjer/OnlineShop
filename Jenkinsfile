@@ -251,18 +251,14 @@ EOF
                     echo "Importing SQL dump into MySQL container..."
 
                     az container exec \
-                    --resource-group inzynierka \
+                    --resource-group $RESOURCE_GROUP \
                     --name onlineshop-group \
                     --container-name mysql \
-                    --exec-command "sh -c 'mysql -u root -p\"$DB_PASSWORD\" shop_database'" \
-                    < db_dump.sql
-
-                    echo "Database import finished successfully"
+                    --exec-command "mysql -u root -p$DB_PASSWORD shop_database" < db_dump.sql
                     '''
                 }
             }
         }
-
 
     }
 }
