@@ -242,5 +242,23 @@ EOF
             }
         }
 
+        stage('Import database data') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'db-password', variable: 'DB_PASSWORD')
+                ]) {
+                    sh '''
+                    echo "Importing SQL dump into MySQL container..."
+
+                    az container exec \
+                    --resource-group $RESOURCE_GROUP \
+                    --name onlineshop-group \
+                    --container-name mysql \
+                    --exec-command "mysql -u root -p$DB_PASSWORD shop_database" < db_dump.sql
+                    '''
+                }
+            }
+        }
+
     }
 }
