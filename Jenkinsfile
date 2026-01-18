@@ -255,16 +255,13 @@ EOF
                     --resource-group $RESOURCE_GROUP \
                     --name onlineshop-group \
                     --container-name mysql \
-                    --exec-command "sh -c 'mysql -u root -p$DB_PASSWORD shop_database < /dev/stdin'" \
-                    < db_dump.sql
+                    --exec-command "mysql -u root -p$DB_PASSWORD shop_database" < db_dump.sql &
 
-                    echo "Database import finished"
+                    sleep 120
                     '''
                 }
             }
         }
-
-
 
     }
 }
