@@ -213,7 +213,7 @@ EOF
                 --resource-group $RESOURCE_GROUP \
                 --file aci-group.yaml
 
-            APP_IP=$(az container show \
+            APP_FQDN=$(az container show \
                 --resource-group $RESOURCE_GROUP \
                 --name $ACI_GROUP_NAME \
                 --query ipAddress.fqdn -o tsv)
