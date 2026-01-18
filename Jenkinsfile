@@ -195,6 +195,7 @@ properties:
 
   ipAddress:
     type: Public
+    dnsNameLabel: onlineshopsite
     ports:
       - protocol: tcp
         port: 9000
@@ -215,9 +216,9 @@ EOF
             APP_IP=$(az container show \
                 --resource-group $RESOURCE_GROUP \
                 --name $ACI_GROUP_NAME \
-                --query ipAddress.ip -o tsv)
+                --query ipAddress.fqdn -o tsv)
 
-            echo "Application URL: http://$APP_IP:9000"
+            echo "Application URL: http://$APP_FQDN:9000"
             '''
         }
     }
