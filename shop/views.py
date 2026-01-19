@@ -218,7 +218,7 @@ def contact_view(request):
             send_mail(
                 subject=f"New contact form message from {name}",
                 message=full_message,
-                from_email=settings.EMAIL_HOST_USER,
+                from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=['zakrzewski.jeremiasz@gmail.com'],
                 fail_silently=False,
             )

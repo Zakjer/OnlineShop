@@ -7,4 +7,5 @@ requests>=2.30
 Pillow>=10.0
 gunicorn>=20.1.0
 whitenoise>=6.5
+sendgrid>=6.11
 cryptography
