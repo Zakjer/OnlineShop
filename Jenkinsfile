@@ -2,7 +2,7 @@ pipeline {
     agent {
         dockerfile {
             filename 'Dockerfile.ci'
-            args '--init -u root:root'
+            args '--init -u root:root -e CLIENT_ID -e CLIENT_SECRET -e TENANT_ID -e SUBSCRIPTION_ID -e DB_PASSWORD -e SECRET_KEY -e DB_HOST -e DB_USER -e DB_NAME'
         }
     }
 
@@ -113,7 +113,11 @@ pipeline {
 
             ACI_GROUP_NAME=onlineshop-group
             FILE_SHARE_NAME=mysql-data
-            STORAGE_ACCOUNT=onlineshop$(date +%s | tail -c 6)
+            STORAGE_ACCOUNT=onlineshopstorage2
+
+            if ! az storage account show \
+                --name $STORAGE_ACCOUNT \
+                --resource-group $RESOURCE_GROUP >/dev/null 2>&1; then
 
             echo "Creating storage account: $STORAGE_ACCOUNT"
             az storage account create \
@@ -121,6 +125,9 @@ pipeline {
                 --resource-group $RESOURCE_GROUP \
                 --location $ACI_REGION \
                 --sku Standard_LRS
+            else
+            echo "Storage account already exists, reusing it"
+            fi
 
             STORAGE_KEY=$(az storage account keys list \
                 --resource-group $RESOURCE_GROUP \
