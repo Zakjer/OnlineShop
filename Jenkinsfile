@@ -191,7 +191,7 @@ properties:
             memoryInGB: 2
         environmentVariables:
           - name: DB_HOST
-            value: 127.0.0.1
+            value: mysql 
           - name: DB_PORT
             value: "3306"
           - name: DB_NAME
