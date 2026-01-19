@@ -1,0 +1,69 @@
+jenkins:
+  systemMessage: "Jenkins is configured via JCasC"
+
+  securityRealm:
+    local:
+      allowsSignup: false
+      users:
+        - id: admin
+          password: admin
+
+  authorizationStrategy:
+    loggedInUsersCanDoAnything:
+      allowAnonymousRead: false
+
+credentials:
+  system:
+    domainCredentials:
+       - credentials:
+          - string:
+              scope: GLOBAL
+              id: azure-client-id
+              secret: ${CLIENT_ID}
+          - string:
+              scope: GLOBAL
+              id: azure-client-secret
+              secret: ${CLIENT_SECRET}
+          - string:
+              scope: GLOBAL
+              id: azure-tenant-id
+              secret: ${TENANT_ID}
+          - string:
+              scope: GLOBAL
+              id: azure-subscription-id
+              secret: ${SUBSCRIPTION_ID}
+          - string:
+              scope: GLOBAL
+              id: db-password
+              secret: ${DB_PASSWORD}
+          - string:
+              scope: GLOBAL
+              id: secret-key
+              secret: ${SECRET_KEY}
+          - string:
+              scope: GLOBAL
+              id: sendgrid-api-key
+              secret: ${SENDGRID_API_KEY}
+jobs:
+  - script: >
+      pipelineJob('OnlineShop-automation') {
+        description('CI/CD pipeline for OnlineShop')
+
+        definition {
+          cpsScm {
+            scm {
+              git {
+                remote {
+                  url('https://github.com/Zakjer/OnlineShop.git')
+                }
+                branch('jenkins_test')
+              }
+            }
+            scriptPath('Jenkinsfile')
+          }
+        }
+      }
+
+unclassified:
+  location:
+    url: http://localhost:8000
