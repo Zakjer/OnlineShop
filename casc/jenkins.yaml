@@ -40,6 +40,10 @@ credentials:
               scope: GLOBAL
               id: secret-key
               secret: ${SECRET_KEY}
+          - string:
+              scope: GLOBAL
+              id: sendgrid-api-key
+              secret: ${SENDGRID_API_KEY}
 jobs:
   - script: >
       pipelineJob('OnlineShop-automation') {

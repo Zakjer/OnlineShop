@@ -114,7 +114,8 @@ pipeline {
             steps {
                 withCredentials([
                     string(credentialsId: 'db-password', variable: 'DB_PASSWORD'),
-                    string(credentialsId: 'secret-key', variable: 'SECRET_KEY')
+                    string(credentialsId: 'secret-key', variable: 'SECRET_KEY'),
+                    string(credentialsId: 'sendgrid-api-key', variable: 'SENDGRID_API_KEY'),
                 ]) {
                     sh '''
                     set -e
@@ -208,7 +209,7 @@ properties:
           - name: SECRET_KEY
             value: ${SECRET_KEY}
           - name: SENDGRID_API_KEY
-            secureValue: ${SENDGRID_API_KEY}
+            value: ${SENDGRID_API_KEY}
 
   ipAddress:
     type: Public
