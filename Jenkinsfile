@@ -46,6 +46,14 @@ pipeline {
             }
         }
 
+        stage('Security scan') {
+            steps {
+                sh '''
+                trivy image --exit-code 1 --severity CRITICAL,HIGH ${IMAGE_NAME}:${IMAGE_TAG}
+                '''
+            }
+        }
+
         stage('Azure authentication') {
             steps {
                 withCredentials([
@@ -93,65 +101,65 @@ pipeline {
                 sh '''
                     az acr login --name $ACR_NAME
 
-                    echo "Tagging Docker image"
+                    echo "Tagging Docker image..."
                     docker tag $IMAGE_NAME:$IMAGE_TAG $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG
 
-                    echo "Pushing Docker image to ACR"
+                    echo "Pushing Docker image to ACR..."
                     docker push $ACR_SERVER/$IMAGE_NAME:$IMAGE_TAG
                 '''
             }
         }
 
         stage('Deploy App + MySQL to ACI') {
-    steps {
-        withCredentials([
-            string(credentialsId: 'db-password', variable: 'DB_PASSWORD'),
-            string(credentialsId: 'secret-key', variable: 'SECRET_KEY')
-        ]) {
-            sh '''
-            set -e
+            steps {
+                withCredentials([
+                    string(credentialsId: 'db-password', variable: 'DB_PASSWORD'),
+                    string(credentialsId: 'secret-key', variable: 'SECRET_KEY')
+                ]) {
+                    sh '''
+                    set -e
 
-            ACI_GROUP_NAME=onlineshop-group
-            FILE_SHARE_NAME=mysql-data
-            STORAGE_ACCOUNT=onlineshopstorage2
+                    ACI_GROUP_NAME=onlineshop-group
+                    FILE_SHARE_NAME=mysql-data
+                    STORAGE_ACCOUNT=onlineshopstorage2
 
-            if ! az storage account show \
-                --name $STORAGE_ACCOUNT \
-                --resource-group $RESOURCE_GROUP >/dev/null 2>&1; then
+                    if ! az storage account show \
+                        --name $STORAGE_ACCOUNT \
+                        --resource-group $RESOURCE_GROUP >/dev/null 2>&1; then
 
-            echo "Creating storage account: $STORAGE_ACCOUNT"
-            az storage account create \
-                --name $STORAGE_ACCOUNT \
-                --resource-group $RESOURCE_GROUP \
-                --location $ACI_REGION \
-                --sku Standard_LRS
-            else
-            echo "Storage account already exists, reusing it"
-            fi
+                    echo "Creating storage account: $STORAGE_ACCOUNT"
+                    az storage account create \
+                        --name $STORAGE_ACCOUNT \
+                        --resource-group $RESOURCE_GROUP \
+                        --location $ACI_REGION \
+                        --sku Standard_LRS
+                    else
+                    echo "Storage account already exists, reusing it"
+                    fi
 
-            STORAGE_KEY=$(az storage account keys list \
-                --resource-group $RESOURCE_GROUP \
-                --account-name $STORAGE_ACCOUNT \
-                --query '[0].value' -o tsv)
+                    STORAGE_KEY=$(az storage account keys list \
+                        --resource-group $RESOURCE_GROUP \
+                        --account-name $STORAGE_ACCOUNT \
+                        --query '[0].value' -o tsv)
 
-            echo "Creating file share"
-            az storage share create \
-                --account-name $STORAGE_ACCOUNT \
-                --account-key $STORAGE_KEY \
-                --name $FILE_SHARE_NAME
+                    echo "Creating file share..."
+                    az storage share create \
+                        --account-name $STORAGE_ACCOUNT \
+                        --account-key $STORAGE_KEY \
+                        --name $FILE_SHARE_NAME
 
 
-            echo "Deleting existing ACI group (if any)"
-            az container delete \
-                --resource-group $RESOURCE_GROUP \
-                --name $ACI_GROUP_NAME \
-                --yes || true
-            sleep 10
+                    echo "Deleting existing ACI group (if any)"
+                    az container delete \
+                        --resource-group $RESOURCE_GROUP \
+                        --name $ACI_GROUP_NAME \
+                        --yes || true
+                    sleep 10
 
-            ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query username -o tsv)
-            ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query passwords[0].value -o tsv)
-            echo "Generating aci-group.yaml"
-            cat > aci-group.yaml <<EOF
+                    ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query username -o tsv)
+                    ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query passwords[0].value -o tsv)
+                    echo "Generating aci-group.yaml"
+                    cat > aci-group.yaml <<EOF
 apiVersion: 2021-09-01
 location: ${ACI_REGION}
 name: ${ACI_GROUP_NAME}
@@ -215,7 +223,7 @@ properties:
         storageAccountKey: ${STORAGE_KEY}
 EOF
 
-            echo "Deploying ACI group"
+            echo "Deploying ACI group..."
             az container create \
                 --resource-group $RESOURCE_GROUP \
                 --file aci-group.yaml
@@ -227,9 +235,9 @@ EOF
 
             echo "Application URL: http://$APP_FQDN:9000"
             '''
+                }
+            }
         }
-    }
-}
         stage('Run Django migrations') {
             steps {
                 sh '''
@@ -249,7 +257,7 @@ EOF
                     string(credentialsId: 'db-password', variable: 'DB_PASSWORD')
                 ]) {
                     sh '''
-                    echo "Importing SQL dump into MySQL container..."
+                    echo "Importing SQL data into MySQL container..."
 
                     az container exec \
                     --resource-group $RESOURCE_GROUP \
@@ -257,11 +265,10 @@ EOF
                     --container-name mysql \
                     --exec-command "mysql -u root -p$DB_PASSWORD shop_database" < db_dump.sql &
 
-                    sleep 120
+                    sleep 45
                     '''
                 }
             }
         }
-
     }
 }

@@ -2,7 +2,7 @@ FROM jenkins/jenkins:lts
 
 USER root
 
-# Install Python, pip, venv, Docker CLI & Compose, Azure CLI
+# Basic tools
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-venv \
@@ -21,7 +21,10 @@ RUN apt-get update && apt-get install -y \
 # Azure CLI
 RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
-# Python venv for your CI tasks
+# Trivy scan
+RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+
+# Python venv
 WORKDIR /app
 COPY requirements.txt .
 RUN python3 -m venv /opt/venv \
