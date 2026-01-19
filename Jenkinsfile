@@ -143,75 +143,14 @@ pipeline {
 
             ACR_USERNAME=$(az acr credential show --name $ACR_NAME --query username -o tsv)
             ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query passwords[0].value -o tsv)
-            echo "Generating aci-group.yaml"
-            cat > aci-group.yaml <<EOF
-apiVersion: 2021-09-01
-location: ${ACI_REGION}
-name: ${ACI_GROUP_NAME}
-properties:
-  osType: Linux
-  restartPolicy: Always
-
-  imageRegistryCredentials:
-    - server: onlineshopacr.azurecr.io
-      username: ${ACR_USERNAME}
-      password: ${ACR_PASSWORD}
-  containers:
-    - name: mysql
-      properties:
-        image: onlineshopacr.azurecr.io/mysql:8.0
-        resources:
-          requests:
-            cpu: 1
-            memoryInGB: 1.5
-        environmentVariables:
-          - name: MYSQL_ROOT_PASSWORD
-            value: ${DB_PASSWORD}
-          - name: MYSQL_DATABASE
-            value: ${DB_NAME}
-
-    - name: django
-      properties:
-        image: ${ACR_SERVER}/${IMAGE_NAME}:${IMAGE_TAG}
-        ports:
-          - port: 9000
-        resources:
-          requests:
-            cpu: 1
-            memoryInGB: 2
-        environmentVariables:
-          - name: DB_HOST
-            value: 127.0.0.1
-          - name: DB_PORT
-            value: "3306"
-          - name: DB_NAME
-            value: ${DB_NAME}
-          - name: DB_USER
-            value: root
-          - name: DB_PASSWORD
-            value: ${DB_PASSWORD}
-          - name: SECRET_KEY
-            value: ${SECRET_KEY}
-
-  ipAddress:
-    type: Public
-    dnsNameLabel: onlineshopsite
-    ports:
-      - protocol: tcp
-        port: 9000
-
-  volumes:
-    - name: mysql-volume
-      azureFile:
-        shareName: ${FILE_SHARE_NAME}
-        storageAccountName: ${STORAGE_ACCOUNT}
-        storageAccountKey: ${STORAGE_KEY}
-EOF
+            
+            echo "Rendering aci-group.yaml from template"
+            envsubst < aci-group.yaml > aci-group.rendered.yaml
 
             echo "Deploying ACI group"
             az container create \
                 --resource-group $RESOURCE_GROUP \
-                --file aci-group.yaml
+                --file aci-group.rendered.yaml
 
             APP_FQDN=$(az container show \
                 --resource-group $RESOURCE_GROUP \
