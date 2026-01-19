@@ -167,6 +167,9 @@ properties:
     - name: mysql
       properties:
         image: onlineshopacr.azurecr.io/mysql:8.0
+        volumeMounts:
+          - name: mysql-volume
+            mountPath: /var/lib/mysql
         resources:
           requests:
             cpu: 1
@@ -180,9 +183,6 @@ properties:
     - name: django
       properties:
         image: ${ACR_SERVER}/${IMAGE_NAME}:${IMAGE_TAG}
-        volumeMounts:
-          - name: mysql-volume
-            mountPath: /var/lib/mysql
         ports:
           - port: 9000
         resources:
