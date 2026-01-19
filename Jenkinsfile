@@ -207,6 +207,8 @@ properties:
             value: ${DB_PASSWORD}
           - name: SECRET_KEY
             value: ${SECRET_KEY}
+          - name: SENDGRID_API_KEY
+            value: ${SENDGRID_API_KEY}
 
   ipAddress:
     type: Public
