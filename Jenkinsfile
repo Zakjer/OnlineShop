@@ -167,13 +167,10 @@ properties:
     - name: mysql
       properties:
         image: onlineshopacr.azurecr.io/mysql:8.0
-        volumeMounts:
-          - name: mysql-volume
-            mountPath: /var/lib/mysql
         resources:
           requests:
-            cpu: 1
-            memoryInGB: 1.5
+            cpu: 2
+            memoryInGB: 4
         environmentVariables:
           - name: MYSQL_ROOT_PASSWORD
             value: ${DB_PASSWORD}
@@ -187,11 +184,11 @@ properties:
           - port: 9000
         resources:
           requests:
-            cpu: 1
-            memoryInGB: 2
+            cpu: 2
+            memoryInGB: 4
         environmentVariables:
           - name: DB_HOST
-            value: mysql 
+            value: 127.0.0.1
           - name: DB_PORT
             value: "3306"
           - name: DB_NAME
