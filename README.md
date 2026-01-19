@@ -69,5 +69,5 @@ The Jenkins pipeline performs:
 6. Deploy to Azure Container Instances
 7. Run Django migrations
 8. Import database data
-![alt text](https://github.com/Zakjer/OnlineShop/blob/main/media/shop/images/pipeline.png?raw=true)
+![alt text](https://github.com/Zakjer/OnlineShop/blob/master/media/shop/images/pipeline.png)
 
