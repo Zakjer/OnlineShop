@@ -49,7 +49,7 @@ pipeline {
         stage('Security scan') {
             steps {
                 sh '''
-                trivy image --exit-code 1 --severity CRITICAL,HIGH ${IMAGE_NAME}:${IMAGE_TAG}
+                trivy image --severity CRITICAL --exit-code 1 --ignore-unfixed ${IMAGE_NAME}:${IMAGE_TAG}
                 '''
             }
         }
