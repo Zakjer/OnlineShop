@@ -169,8 +169,8 @@ properties:
         image: onlineshopacr.azurecr.io/mysql:8.0
         resources:
           requests:
-            cpu: 2
-            memoryInGB: 4
+            cpu: 1
+            memoryInGB: 1.5
         environmentVariables:
           - name: MYSQL_ROOT_PASSWORD
             value: ${DB_PASSWORD}
@@ -184,8 +184,8 @@ properties:
           - port: 9000
         resources:
           requests:
-            cpu: 2
-            memoryInGB: 4
+            cpu: 1
+            memoryInGB: 2
         environmentVariables:
           - name: DB_HOST
             value: 127.0.0.1
