@@ -49,6 +49,10 @@ jobs:
       pipelineJob('OnlineShop-automation') {
         description('CI/CD pipeline for OnlineShop')
 
+        triggers {
+          githubPush()
+        }
+
         definition {
           cpsScm {
             scm {
@@ -56,7 +60,7 @@ jobs:
                 remote {
                   url('https://github.com/Zakjer/OnlineShop.git')
                 }
-                branch('jenkins_test')
+                branch('master')
               }
             }
             scriptPath('Jenkinsfile')
