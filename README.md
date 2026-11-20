@@ -2,9 +2,9 @@ OnlineShop is a Django-based e-commerce web application built with DevOps practi
 The project is fully containerized, uses a Jenkins CI/CD pipeline, and is deployed to Microsoft Azure using Azure Container Instances (ACI).
 
 ## Architecture diagram
+![alt text](https://github.com/Zakjer/OnlineShop/blob/master/media/shop/images/architecture.png)
 
 ## Features
-![alt text](https://github.com/Zakjer/OnlineShop/blob/master/media/shop/images/architecture.png)
 
 - Django backend covered with unit tests (Python)
 - Product catalog and admin panel
